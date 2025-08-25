@@ -348,13 +348,15 @@ class MetricRegistry: ObservableObject {
     }
     
     private func setupGeneralMetrics() {
+        // Core metrics (apply to all locations) — 0.75 total
+        
         // Foot Traffic - applies to all locations
         registerMetric(MetricDefinition(
-            key: "general_foot_traffic",
-            title: "Foot Traffic",
+            key: "foot_traffic_daily",
+            title: "Foot Traffic (Daily)",
             description: "Daily foot traffic volume. Higher traffic increases sales potential.",
             category: .footTraffic,
-            weight: 0.15,
+            weight: 0.20, // 20% - highest weight
             isRequired: true,
             ratingDescriptions: [
                 1: "< 100",
@@ -367,11 +369,11 @@ class MetricRegistry: ObservableObject {
         
         // Target Demographics - applies to all locations
         registerMetric(MetricDefinition(
-            key: "general_demographics",
-            title: "Target Demographics",
+            key: "target_demo_fit",
+            title: "Target Demographic Fit",
             description: "Alignment with target customer demographic profile.",
             category: .demographics,
-            weight: 0.12,
+            weight: 0.10, // 10%
             isRequired: true,
             ratingDescriptions: [
                 1: "No Match",
@@ -384,11 +386,11 @@ class MetricRegistry: ObservableObject {
         
         // Competition - applies to all locations
         registerMetric(MetricDefinition(
-            key: "general_competition",
-            title: "Competition",
+            key: "nearby_competition",
+            title: "Nearby Competition",
             description: "Proximity and strength of competing food/beverage options.",
             category: .competition,
-            weight: 0.12,
+            weight: 0.10, // 10%
             isRequired: true,
             ratingDescriptions: [
                 1: "High competition",
@@ -399,45 +401,15 @@ class MetricRegistry: ObservableObject {
             ]
         ))
         
-        // Accessibility - applies to all locations
-        registerMetric(MetricDefinition(
-            key: "general_accessibility",
-            title: "Parking & Transit",
-            description: "Ease of access for service vehicles and logistics.",
-            category: .accessibility,
-            weight: 0.18,
-            ratingDescriptions: [
-                1: "No loading access",
-                2: "Difficult access",
-                3: "Acceptable access",
-                4: "Good access",
-                5: "Dedicated loading zone"
-            ]
-        ))
+        // Logistics & Infrastructure (subtotal 0.15)
         
-        // Security - applies to all locations
+        // Visibility & Accessibility
         registerMetric(MetricDefinition(
-            key: "general_security",
-            title: "Security",
-            description: "Security measures and theft prevention capabilities.",
-            category: .security,
-            weight: 0.10,
-            ratingDescriptions: [
-                1: "No CCTV or security",
-                2: "Limited security",
-                3: "Part-time monitoring",
-                4: "CCTV + staff presence",
-                5: "Full security system"
-            ]
-        ))
-        
-        // Visibility - applies to all locations  
-        registerMetric(MetricDefinition(
-            key: "general_visibility",
-            title: "Visibility & Location",
+            key: "visibility_accessibility",
+            title: "Visibility & Accessibility",
             description: "Visibility and accessibility of potential vending locations.",
             category: .layout,
-            weight: 0.10,
+            weight: 0.05, // 5%
             ratingDescriptions: [
                 1: "Hidden location",
                 2: "Side corridor",
@@ -447,13 +419,45 @@ class MetricRegistry: ObservableObject {
             ]
         ))
         
-        // Amenities - applies to all locations
+        // Parking & Transit Access
         registerMetric(MetricDefinition(
-            key: "general_amenities",
+            key: "parking_transit",
+            title: "Parking & Transit Access",
+            description: "Ease of access for service vehicles and logistics.",
+            category: .accessibility,
+            weight: 0.04, // 4%
+            ratingDescriptions: [
+                1: "No loading access",
+                2: "Difficult access",
+                3: "Acceptable access",
+                4: "Good access",
+                5: "Dedicated loading zone"
+            ]
+        ))
+        
+        // Security
+        registerMetric(MetricDefinition(
+            key: "security",
+            title: "Security",
+            description: "Security measures and theft prevention capabilities.",
+            category: .security,
+            weight: 0.04, // 4%
+            ratingDescriptions: [
+                1: "No CCTV or security",
+                2: "Limited security",
+                3: "Part-time monitoring",
+                4: "CCTV + staff presence",
+                5: "Full security system"
+            ]
+        ))
+        
+        // Adjacent Amenities
+        registerMetric(MetricDefinition(
+            key: "adjacent_amenities",
             title: "Adjacent Amenities",
             description: "Nearby amenities that drive foot traffic (elevators, mailrooms, ATMs).",
             category: .amenities,
-            weight: 0.08,
+            weight: 0.02, // 2%
             ratingDescriptions: [
                 1: "No amenities",
                 2: "1 traffic booster",
@@ -463,13 +467,15 @@ class MetricRegistry: ObservableObject {
             ]
         ))
         
-        // Host Commission - applies to all locations
+        // Financial Terms & ROI (subtotal 0.20)
+        
+        // Host Commission % - Note: Commission lives only here to avoid double counting in modules
         registerMetric(MetricDefinition(
-            key: "general_commission",
-            title: "Host Commission",
+            key: "host_commission_pct",
+            title: "Host Commission %",
             description: "Commission percentage charged by location host.",
             category: .financial,
-            weight: 0.18,
+            weight: 0.08, // 8%
             isRequired: true,
             ratingDescriptions: [
                 1: "Above 20%",
@@ -479,387 +485,518 @@ class MetricRegistry: ObservableObject {
                 5: "5% or lower"
             ]
         ))
+        
+        // Payback Period vs Target
+        registerMetric(MetricDefinition(
+            key: "payback_vs_target",
+            title: "Payback Period vs Target",
+            description: "How quickly the investment pays for itself compared to target.",
+            category: .financial,
+            weight: 0.06, // 6%
+            ratingDescriptions: [
+                1: "> 36 months",
+                2: "24-36 months",
+                3: "18-24 months",
+                4: "12-18 months",
+                5: "< 12 months"
+            ]
+        ))
+        
+        // Route Fit / Clustering
+        registerMetric(MetricDefinition(
+            key: "route_cluster_fit",
+            title: "Route Fit / Clustering",
+            description: "How well this location fits into existing service routes.",
+            category: .operations,
+            weight: 0.04, // 4%
+            ratingDescriptions: [
+                1: "Requires new route",
+                2: "Significant detour",
+                3: "Minor detour",
+                4: "On existing route",
+                5: "Perfect route fit"
+            ]
+        ))
+        
+        // Install Complexity / One-time Cost
+        registerMetric(MetricDefinition(
+            key: "install_complexity",
+            title: "Install Complexity / One-time Cost",
+            description: "Complexity and cost of initial installation.",
+            category: .operations,
+            weight: 0.02, // 2%
+            ratingDescriptions: [
+                1: "Very complex/expensive",
+                2: "Complex/expensive",
+                3: "Moderate complexity/cost",
+                4: "Simple/affordable",
+                5: "Very simple/cheap"
+            ]
+        ))
     }
     
     private func setupOfficeMetrics() {
+        // Office — 0.25 total
+        
         registerMetric(MetricDefinition(
-            key: "office_common_areas",
-            title: "Common Areas",
-            description: "Availability and quality of common areas like break rooms and lounges.",
-            category: .amenities,
-            applicableLocations: [.office],
+            key: "off_common_areas",
+            title: "Common Areas Available",
+            description: "Availability and quality of common areas for vending placement.",
+            category: .layout,
+            weight: 0.060, // 6.0%
             ratingDescriptions: [
-                1: "None",
-                2: "Small kitchenette only",
-                3: "Lounge or shared break area",
-                4: "Lounge + café nook",
-                5: "Lounge + cafeteria / multiple hubs"
+                1: "No common areas",
+                2: "Limited common areas",
+                3: "Some common areas",
+                4: "Good common areas",
+                5: "Excellent common areas"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "office_hours_access",
-            title: "Hours & Access",
-            description: "Building access hours and flexibility for vending operations.",
+            key: "off_hours_access",
+            title: "Hours & Access Control",
+            description: "Building access hours and control systems.",
             category: .operations,
-            applicableLocations: [.office],
+            weight: 0.050, // 5.0%
             ratingDescriptions: [
-                1: "9-5 only, strict access",
-                2: "9-7, limited evenings",
-                3: "Extended weekdays",
-                4: "Weekdays + some weekends",
-                5: "24/7 with tenant badge"
+                1: "Very limited hours",
+                2: "Limited hours",
+                3: "Standard hours",
+                4: "Extended hours",
+                5: "24/7 access"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "office_tenant_amenities",
-            title: "Tenant Food Amenities",
-            description: "Existing food and beverage options for tenants.",
-            category: .competition,
-            applicableLocations: [.office],
+            key: "off_tenant_amenities",
+            title: "Tenant Amenities Offered",
+            description: "Amenities available to office tenants.",
+            category: .amenities,
+            weight: 0.050, // 5.0%
             ratingDescriptions: [
-                1: "Full cafeteria / subsidized food",
-                2: "Multiple food vendors",
-                3: "Limited café / snack cart",
-                4: "Coffee only",
-                5: "None"
+                1: "No amenities",
+                2: "Basic amenities",
+                3: "Some amenities",
+                4: "Good amenities",
+                5: "Excellent amenities"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "office_transit_hub",
-            title: "Hub Proximity & Transit",
+            key: "off_proximity_hub_transit",
+            title: "Proximity to Hub/Transit",
             description: "Proximity to transportation hubs and transit options.",
             category: .accessibility,
-            applicableLocations: [.office],
+            weight: 0.040, // 4.0%
             ratingDescriptions: [
-                1: "Remote from hubs, poor transit",
-                2: "Edge of hub / infrequent transit", 
-                3: "Near hub or decent transit",
-                4: "In hub + good transit",
-                5: "Prime hub + major transit interchange"
+                1: "Far from transit",
+                2: "Moderate distance",
+                3: "Close to transit",
+                4: "Very close to transit",
+                5: "At transit hub"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "office_branding_restrictions",
+            key: "off_branding_restrictions",
             title: "Branding Restrictions",
-            description: "Restrictions on signage and branding for vending machines.",
+            description: "Restrictions on branding and signage.",
             category: .restrictions,
-            applicableLocations: [.office],
+            weight: 0.020, // 2.0%
             ratingDescriptions: [
-                1: "Severe (no signage, approvals slow)",
-                2: "Heavy (strict size/colour limits)",
-                3: "Moderate (some constraints)",
-                4: "Light (basic guidelines)",
-                5: "Minimal/none"
+                1: "Very restrictive",
+                2: "Restrictive",
+                3: "Moderately restrictive",
+                4: "Minimally restrictive",
+                5: "No restrictions"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "office_layout_type",
-            title: "Layout Type",
-            description: "Building layout and tenant density characteristics.",
+            key: "off_layout_type",
+            title: "Layout Type (Single vs. Multi-tenant)",
+            description: "Building layout and tenant structure.",
             category: .layout,
-            applicableLocations: [.office],
+            weight: 0.030, // 3.0%
             ratingDescriptions: [
-                1: "Single-tenant, low density",
-                2: "Single-tenant, medium density",
-                3: "Multi-tenant (2-3)",
-                4: "Multi-tenant (4-6)",
-                5: "Multi-tenant (7+ diverse tenants)"
+                1: "Poor layout",
+                2: "Fair layout",
+                3: "Good layout",
+                4: "Very good layout",
+                5: "Excellent layout"
             ]
         ))
     }
     
     private func setupHospitalMetrics() {
-        registerMetric(MetricDefinition(
-            key: "hospital_patient_volume",
-            title: "Patient Volume", 
-            description: "Daily patient volume and flow patterns.",
-            category: .footTraffic,
-            applicableLocations: [.hospital],
-            ratingDescriptions: [
-                1: "<100 patients/day",
-                2: "100-300 patients/day",
-                3: "300-500 patients/day",
-                4: "500-800 patients/day",
-                5: "800+ patients/day"
-            ]
-        ))
+        // Hospital / Healthcare — 0.25 total
         
         registerMetric(MetricDefinition(
-            key: "hospital_staff_size",
-            title: "Staff Size",
-            description: "Number of staff members and their distribution.",
-            category: .demographics,
-            applicableLocations: [.hospital],
-            ratingDescriptions: [
-                1: "<50 staff",
-                2: "50-100 staff",
-                3: "100-200 staff",
-                4: "200-400 staff",
-                5: "400+ staff"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "hospital_visitor_traffic",
-            title: "Visitor Traffic",
-            description: "Visitor flow patterns and volume.",
-            category: .footTraffic,
-            applicableLocations: [.hospital],
-            ratingDescriptions: [
-                1: "Minimal visitors",
-                2: "Low visitor traffic",
-                3: "Moderate visitor traffic",
-                4: "High visitor traffic",
-                5: "Very high visitor traffic"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "hospital_food_service",
-            title: "Food Service",
-            description: "Existing food service options and competition level.",
-            category: .competition,
-            applicableLocations: [.hospital],
-            ratingDescriptions: [
-                1: "Full-service cafeteria",
-                2: "Multiple food options",
-                3: "Limited food options",
-                4: "Basic vending only",
-                5: "No food service"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "hospital_vending_restrictions",
-            title: "Vending Restrictions",
-            description: "Healthcare-specific restrictions on vending operations.",
-            category: .restrictions,
-            applicableLocations: [.hospital],
-            ratingDescriptions: [
-                1: "Many restrictions",
-                2: "Several restrictions",
-                3: "Some restrictions",
-                4: "Few restrictions",
-                5: "No restrictions"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "hospital_hours_operation",
-            title: "Hours of Operation",
-            description: "Facility operating hours and accessibility.",
+            key: "hos_health_safety",
+            title: "Health-Safety Compliance",
+            description: "Compliance with health and safety regulations.",
             category: .operations,
-            applicableLocations: [.hospital],
+            weight: 0.070, // 7.0%
             ratingDescriptions: [
-                1: "Limited hours",
-                2: "Standard business hours",
-                3: "Extended hours",
-                4: "Long hours",
-                5: "24/7 operation"
+                1: "Non-compliant",
+                2: "Partially compliant",
+                3: "Mostly compliant",
+                4: "Fully compliant",
+                5: "Exceeds compliance"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "hos_distance_patient_m",
+            title: "Distance to Patient Areas (m)",
+            description: "Distance from vending location to patient areas.",
+            category: .layout,
+            weight: 0.050, // 5.0%
+            ratingDescriptions: [
+                1: "> 200m",
+                2: "150-200m",
+                3: "100-150m",
+                4: "50-100m",
+                5: "< 50m"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "hos_vending_zones",
+            title: "Designated Vending Zones",
+            description: "Availability of designated vending machine zones.",
+            category: .layout,
+            weight: 0.050, // 5.0%
+            ratingDescriptions: [
+                1: "No designated zones",
+                2: "Limited zones",
+                3: "Some zones",
+                4: "Good zones",
+                5: "Excellent zones"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "hos_fm_coordination",
+            title: "Facilities Mgmt Coordination",
+            description: "Coordination with facilities management team.",
+            category: .operations,
+            weight: 0.040, // 4.0%
+            ratingDescriptions: [
+                1: "No coordination",
+                2: "Poor coordination",
+                3: "Fair coordination",
+                4: "Good coordination",
+                5: "Excellent coordination"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "hos_hygiene_extras",
+            title: "Hygiene & Sanitation Extras",
+            description: "Additional hygiene and sanitation requirements.",
+            category: .operations,
+            weight: 0.040, // 4.0%
+            ratingDescriptions: [
+                1: "No requirements",
+                2: "Basic requirements",
+                3: "Moderate requirements",
+                4: "High requirements",
+                5: "Very high requirements"
             ]
         ))
     }
     
     private func setupSchoolMetrics() {
-        registerMetric(MetricDefinition(
-            key: "school_student_population",
-            title: "Student Population",
-            description: "Number of students and enrollment patterns.",
-            category: .demographics,
-            applicableLocations: [.school],
-            ratingDescriptions: [
-                1: "<500 students",
-                2: "500-999 students",
-                3: "1,000-1,999 students",
-                4: "2,000-4,999 students",
-                5: "5,000+ students"
-            ]
-        ))
+        // School / University — 0.25 total
         
         registerMetric(MetricDefinition(
-            key: "school_staff_size",
-            title: "Staff Size",
-            description: "Number of faculty and staff members.",
-            category: .demographics,
-            applicableLocations: [.school],
-            ratingDescriptions: [
-                1: "<50 staff",
-                2: "50-99 staff",
-                3: "100-199 staff",
-                4: "200-399 staff",
-                5: "400+ staff"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "school_food_service",
-            title: "Food Service",
-            description: "Existing cafeteria and food service competition.",
-            category: .competition,
-            applicableLocations: [.school],
-            ratingDescriptions: [
-                1: "Full-service cafeteria",
-                2: "Multiple food options",
-                3: "Limited food options",
-                4: "Basic vending only",
-                5: "No food service"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "school_vending_restrictions",
-            title: "Vending Restrictions",
-            description: "Educational institution restrictions on vending.",
-            category: .restrictions,
-            applicableLocations: [.school],
-            ratingDescriptions: [
-                1: "Many restrictions",
-                2: "Several restrictions",
-                3: "Some restrictions",
-                4: "Few restrictions",
-                5: "No restrictions"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "school_hours_operation",
-            title: "Hours of Operation",
-            description: "School operating hours and access patterns.",
-            category: .operations,
-            applicableLocations: [.school],
-            ratingDescriptions: [
-                1: "Limited hours",
-                2: "Standard school hours",
-                3: "Extended hours",
-                4: "Long hours",
-                5: "24/7 access"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "school_campus_layout",
-            title: "Campus Layout",
-            description: "Campus layout and building distribution for optimal placement.",
+            key: "sch_placement_hotspots",
+            title: "Placement in Student Hotspots",
+            description: "Placement in high-traffic student areas.",
             category: .layout,
-            applicableLocations: [.school],
+            weight: 0.080, // 8.0%
             ratingDescriptions: [
-                1: "Poor layout",
-                2: "Fair layout",
-                3: "Good layout",
-                4: "Very good layout",
-                5: "Excellent layout"
+                1: "Poor placement",
+                2: "Fair placement",
+                3: "Good placement",
+                4: "Very good placement",
+                5: "Excellent placement"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "sch_schedule_alignment",
+            title: "Schedule Alignment",
+            description: "Alignment with student schedules and activity patterns.",
+            category: .operations,
+            weight: 0.050, // 5.0%
+            ratingDescriptions: [
+                1: "Poor alignment",
+                2: "Fair alignment",
+                3: "Good alignment",
+                4: "Very good alignment",
+                5: "Excellent alignment"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "sch_product_mix",
+            title: "Product-Mix Suitability/Compliance",
+            description: "Suitability of product mix for school environment and compliance requirements.",
+            category: .operations,
+            weight: 0.040, // 4.0%
+            ratingDescriptions: [
+                1: "Poor suitability",
+                2: "Fair suitability",
+                3: "Good suitability",
+                4: "Very good suitability",
+                5: "Excellent suitability"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "sch_admin_approval",
+            title: "Admin Approval Status",
+            description: "Status of administrative approval for vending operations.",
+            category: .operations,
+            weight: 0.050, // 5.0%
+            ratingDescriptions: [
+                1: "No approval",
+                2: "Pending approval",
+                3: "Conditional approval",
+                4: "Full approval",
+                5: "Expedited approval"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "sch_safety_accessibility",
+            title: "Safety & Accessibility",
+            description: "Safety measures and accessibility for students.",
+            category: .security,
+            weight: 0.030, // 3.0%
+            ratingDescriptions: [
+                1: "Poor safety/accessibility",
+                2: "Fair safety/accessibility",
+                3: "Good safety/accessibility",
+                4: "Very good safety/accessibility",
+                5: "Excellent safety/accessibility"
             ]
         ))
     }
     
     private func setupResidentialMetrics() {
+        // Residential (apartments/condos/townhomes) — 0.25 total
+        
         registerMetric(MetricDefinition(
-            key: "residential_unit_count",
-            title: "Unit Count",
-            description: "Number of residential units in the building.",
+            key: "res_total_units",
+            title: "Total Units",
+            description: "Total number of residential units in the building/complex.",
             category: .demographics,
-            applicableLocations: [.residential],
+            weight: 0.035, // 3.5%
             ratingDescriptions: [
-                1: "<100 units",
-                2: "100-149 units",
-                3: "150-249 units",
-                4: "250-349 units",
-                5: "350+ units"
+                1: "< 50 units",
+                2: "50-100 units",
+                3: "100-200 units",
+                4: "200-500 units",
+                5: "> 500 units"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "residential_occupancy_rate",
+            key: "res_occupancy_rate",
             title: "Occupancy Rate",
-            description: "Current occupancy rate and tenant stability.",
+            description: "Current occupancy rate of the residential complex.",
             category: .demographics,
-            applicableLocations: [.residential],
+            weight: 0.020, // 2.0%
             ratingDescriptions: [
-                1: "<80%",
-                2: "80-89%",
-                3: "90-94%",
-                4: "95-97%",
-                5: "98-100%"
+                1: "< 60%",
+                2: "60-75%",
+                3: "75-85%",
+                4: "85-95%",
+                5: "> 95%"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "residential_demographics",
-            title: "Resident Demographics",
-            description: "Demographic profile and purchasing patterns of residents.",
+            key: "res_demo_18_45_pct",
+            title: "% Residents 18-45",
+            description: "Percentage of residents in the target age demographic.",
             category: .demographics,
-            applicableLocations: [.residential],
+            weight: 0.020, // 2.0%
             ratingDescriptions: [
-                1: "Limited appeal",
-                2: "Some appeal",
-                3: "Moderate appeal",
-                4: "High appeal", 
-                5: "Very high appeal"
+                1: "< 20%",
+                2: "20-35%",
+                3: "35-50%",
+                4: "50-65%",
+                5: "> 65%"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "residential_food_service",
-            title: "Food Service",
-            description: "Existing food service options in the building.",
-            category: .competition,
-            applicableLocations: [.residential],
-            ratingDescriptions: [
-                1: "Full-service options",
-                2: "Multiple alternatives",
-                3: "Limited alternatives",
-                4: "Basic options only",
-                5: "No food service"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "residential_vending_restrictions",
-            title: "Vending Restrictions",
-            description: "Building management restrictions on vending operations.",
-            category: .restrictions,
-            applicableLocations: [.residential],
-            ratingDescriptions: [
-                1: "Many restrictions",
-                2: "Several restrictions",
-                3: "Some restrictions",
-                4: "Few restrictions",
-                5: "No restrictions"
-            ]
-        ))
-        
-        registerMetric(MetricDefinition(
-            key: "residential_hours_operation",
-            title: "Hours of Operation",
-            description: "Building access hours and resident activity patterns.",
+            key: "res_avg_lease_months",
+            title: "Average Lease Length (Months)",
+            description: "Average length of residential leases.",
             category: .operations,
-            applicableLocations: [.residential],
+            weight: 0.010, // 1.0%
             ratingDescriptions: [
-                1: "Limited hours",
-                2: "Standard hours",
-                3: "Extended hours",
-                4: "Long hours",
-                5: "24/7 access"
+                1: "< 6 months",
+                2: "6-12 months",
+                3: "12-18 months",
+                4: "18-24 months",
+                5: "> 24 months"
             ]
         ))
         
         registerMetric(MetricDefinition(
-            key: "residential_building_layout",
-            title: "Building Layout",
-            description: "Building layout and common area distribution.",
-            category: .layout,
-            applicableLocations: [.residential],
+            key: "res_amenity_usage_pct",
+            title: "Amenity Usage Rate",
+            description: "How actively residents use common amenities.",
+            category: .amenities,
+            weight: 0.020, // 2.0%
             ratingDescriptions: [
-                1: "Poor layout",
-                2: "Fair layout",
-                3: "Good layout",
-                4: "Very good layout",
-                5: "Excellent layout"
+                1: "Very low usage",
+                2: "Low usage",
+                3: "Moderate usage",
+                4: "High usage",
+                5: "Very high usage"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_access_24_7",
+            title: "24/7 Common-Area Access",
+            description: "Whether common areas are accessible 24/7.",
+            category: .operations,
+            weight: 0.020, // 2.0%
+            ratingDescriptions: [
+                1: "No 24/7 access",
+                2: "Limited 24/7 access",
+                3: "Partial 24/7 access",
+                4: "Most areas 24/7",
+                5: "Full 24/7 access"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_install_visibility",
+            title: "Install Visibility",
+            description: "Visibility of vending machine installation.",
+            category: .layout,
+            weight: 0.025, // 2.5%
+            ratingDescriptions: [
+                1: "Hidden location",
+                2: "Poor visibility",
+                3: "Moderate visibility",
+                4: "Good visibility",
+                5: "Excellent visibility"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_power_connectivity",
+            title: "Power & Connectivity",
+            description: "Availability of power and internet connectivity.",
+            category: .operations,
+            weight: 0.020, // 2.0%
+            ratingDescriptions: [
+                1: "No power/connectivity",
+                2: "Basic power only",
+                3: "Power + basic connectivity",
+                4: "Power + good connectivity",
+                5: "Power + excellent connectivity"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_service_path",
+            title: "Service/Loading Path",
+            description: "Ease of service and loading access.",
+            category: .accessibility,
+            weight: 0.020, // 2.0%
+            ratingDescriptions: [
+                1: "No service access",
+                2: "Difficult access",
+                3: "Challenging access",
+                4: "Good access",
+                5: "Excellent access"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_security_measures",
+            title: "Security Measures",
+            description: "Security measures in place for the complex.",
+            category: .security,
+            weight: 0.020, // 2.0%
+            ratingDescriptions: [
+                1: "No security",
+                2: "Basic security",
+                3: "Moderate security",
+                4: "Good security",
+                5: "Excellent security"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_on_site_alternatives",
+            title: "On-Site Alternatives",
+            description: "Presence of competing food/beverage options on-site.",
+            category: .competition,
+            weight: 0.010, // 1.0%
+            ratingDescriptions: [
+                1: "Many alternatives",
+                2: "Several alternatives",
+                3: "Few alternatives",
+                4: "Very few alternatives",
+                5: "No alternatives"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_walk_time_store_min",
+            title: "Walk Time to Store (Min)",
+            description: "Walking time to nearest convenience store.",
+            category: .accessibility,
+            weight: 0.020, // 2.0%
+            ratingDescriptions: [
+                1: "> 15 minutes",
+                2: "10-15 minutes",
+                3: "5-10 minutes",
+                4: "2-5 minutes",
+                5: "< 2 minutes"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_hoa_rules",
+            title: "HOA/Strata Rules",
+            description: "Restrictions imposed by HOA or strata council.",
+            category: .restrictions,
+            weight: 0.005, // 0.5%
+            ratingDescriptions: [
+                1: "Very restrictive",
+                2: "Restrictive",
+                3: "Moderately restrictive",
+                4: "Minimally restrictive",
+                5: "Not restrictive"
+            ]
+        ))
+        
+        registerMetric(MetricDefinition(
+            key: "res_events_per_year",
+            title: "Resident Events/Year",
+            description: "Number of resident events held annually.",
+            category: .amenities,
+            weight: 0.005, // 0.5%
+            ratingDescriptions: [
+                1: "0 events",
+                2: "1-2 events",
+                3: "3-5 events",
+                4: "6-10 events",
+                5: "> 10 events"
             ]
         ))
     }

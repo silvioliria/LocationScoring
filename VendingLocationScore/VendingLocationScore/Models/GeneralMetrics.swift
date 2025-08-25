@@ -275,25 +275,49 @@ final class GeneralMetrics: Codable {
     
     /// Calculate weighted overall score using MANUAL RATINGS (1-5 stars) instead of computed scores
     func calculateWeightedOverallScore(moduleSpecificScore: Double) -> Double {
+        // Core metrics (apply to all locations) — 0.75 total
         // Use MANUAL RATINGS (1-5 stars) that the user sets, not computed scores
-        let footTrafficWeight: Double = 0.15
-        let demographicFitWeight: Double = 0.12
-        let competitiveGapWeight: Double = 0.12
-        let logisticsInfrastructureWeight: Double = 0.18
+        
+        // Foot Traffic - 20%
+        let footTrafficWeight: Double = 0.20
+        // Target Demographic Fit - 10%
+        let demographicFitWeight: Double = 0.10
+        // Nearby Competition - 10%
+        let competitiveGapWeight: Double = 0.10
+        // Logistics & Infrastructure (subtotal 15%)
+        let visibilityAccessibilityWeight: Double = 0.05
+        let parkingTransitWeight: Double = 0.04
+        let securityWeight: Double = 0.04
+        let adjacentAmenitiesWeight: Double = 0.02
+        // Financial Terms & ROI (subtotal 20%)
+        let hostCommissionWeight: Double = 0.08
+        let paybackVsTargetWeight: Double = 0.06
+        let routeClusterFitWeight: Double = 0.04
+        let installComplexityWeight: Double = 0.02
+        // Module-specific score - 25%
         let moduleSpecificWeight: Double = 0.25
-        let financialTermsWeight: Double = 0.18
         
         let weightedSum = 
             Double(footTrafficRating) * footTrafficWeight +           // Manual rating
             Double(targetDemographicRating) * demographicFitWeight + // Manual rating
             Double(competitionRating) * competitiveGapWeight +       // Manual rating
-            Double(parkingTransitRating) * logisticsInfrastructureWeight + // Manual rating
-            moduleSpecificScore * moduleSpecificWeight +
-            Double(hostCommissionRating) * financialTermsWeight      // Manual rating
+            Double(visibilityRating) * visibilityAccessibilityWeight + // Manual rating
+            Double(parkingTransitRating) * parkingTransitWeight +    // Manual rating
+            Double(securityRating) * securityWeight +                // Manual rating
+            Double(amenitiesRating) * adjacentAmenitiesWeight +      // Manual rating
+            Double(hostCommissionRating) * hostCommissionWeight +    // Manual rating
+            // Note: These metrics need to be added to the GeneralMetrics model
+            // For now, using placeholder values of 3 (neutral rating)
+            3.0 * paybackVsTargetWeight +                           // Placeholder
+            3.0 * routeClusterFitWeight +                           // Placeholder
+            3.0 * installComplexityWeight +                         // Placeholder
+            moduleSpecificScore * moduleSpecificWeight
         
         let totalWeight = footTrafficWeight + demographicFitWeight + 
-                         competitiveGapWeight + logisticsInfrastructureWeight +
-                         moduleSpecificWeight + financialTermsWeight
+                         competitiveGapWeight + visibilityAccessibilityWeight +
+                         parkingTransitWeight + securityWeight + adjacentAmenitiesWeight +
+                         hostCommissionWeight + paybackVsTargetWeight + routeClusterFitWeight +
+                         installComplexityWeight + moduleSpecificWeight
         
         return weightedSum / totalWeight / 5.0 // Normalize to 0-1 scale
     }
