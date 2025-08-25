@@ -148,7 +148,7 @@ struct OverviewView: View {
     // MARK: - Computed Properties
     
     private var weightedScore: Double {
-        guard let scorecard = location.scorecard,
+        guard let _ = location.scorecard,
               let generalMetrics = location.generalMetrics else {
             return 0.0
         }
@@ -176,7 +176,7 @@ struct OverviewView: View {
     }
     
     private var decision: LocationDecision {
-        guard let scorecard = location.scorecard,
+        guard let _ = location.scorecard,
               let generalMetrics = location.generalMetrics else {
             return .pass
         }

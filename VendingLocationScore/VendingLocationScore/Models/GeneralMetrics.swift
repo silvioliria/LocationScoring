@@ -166,13 +166,14 @@ final class GeneralMetrics: Codable {
             amenitiesRating
         ]
         
-        let ratedCount = ratings.filter { $0 > 0 }.count
+        // Filter out unrated metrics (rating = 0)
+        let ratedMetrics = ratings.filter { $0 > 0 }
         
         // Require at least 3 metrics to be rated before calculating a meaningful score
-        guard ratedCount >= 3 else { return 0.0 }
+        guard ratedMetrics.count >= 3 else { return 0.0 }
         
-        let total = ratings.reduce(0) { $0 + $1 }
-        return Double(total) / Double(ratedCount)
+        let total = ratedMetrics.reduce(0) { $0 + $1 }
+        return Double(total) / Double(ratedMetrics.count)
     }
     
     // MARK: - Computed Objective Scores
@@ -272,8 +273,33 @@ final class GeneralMetrics: Codable {
     
     // MARK: - Weighted Score Calculation
     
-    /// Calculate weighted overall score using computed scores (matching Scorecard logic)
+    /// Calculate weighted overall score using MANUAL RATINGS (1-5 stars) instead of computed scores
     func calculateWeightedOverallScore(moduleSpecificScore: Double) -> Double {
+        // Use MANUAL RATINGS (1-5 stars) that the user sets, not computed scores
+        let footTrafficWeight: Double = 0.15
+        let demographicFitWeight: Double = 0.12
+        let competitiveGapWeight: Double = 0.12
+        let logisticsInfrastructureWeight: Double = 0.18
+        let moduleSpecificWeight: Double = 0.25
+        let financialTermsWeight: Double = 0.18
+        
+        let weightedSum = 
+            Double(footTrafficRating) * footTrafficWeight +           // Manual rating
+            Double(targetDemographicRating) * demographicFitWeight + // Manual rating
+            Double(competitionRating) * competitiveGapWeight +       // Manual rating
+            Double(parkingTransitRating) * logisticsInfrastructureWeight + // Manual rating
+            moduleSpecificScore * moduleSpecificWeight +
+            Double(hostCommissionRating) * financialTermsWeight      // Manual rating
+        
+        let totalWeight = footTrafficWeight + demographicFitWeight + 
+                         competitiveGapWeight + logisticsInfrastructureWeight +
+                         moduleSpecificWeight + financialTermsWeight
+        
+        return weightedSum / totalWeight / 5.0 // Normalize to 0-1 scale
+    }
+    
+    /// Calculate weighted overall score using computed scores (matching Scorecard logic) - LEGACY METHOD
+    func calculateWeightedOverallScoreComputed(moduleSpecificScore: Double) -> Double {
         // Updated weights: Foot Traffic reduced from 20% to 15%, 5% distributed to other metrics
         let footTrafficWeight: Double = 0.15        // Reduced from 0.20 (20%) to 0.15 (15%)
         let demographicFitWeight: Double = 0.12     // Increased from 0.10 (10%) to 0.12 (12%)

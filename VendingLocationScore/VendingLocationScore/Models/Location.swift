@@ -5,7 +5,7 @@ import SwiftData
 // MARK: - Simplified Location Model (With SwiftData)
 
 @Model
-final class Location: Codable {
+final class Location: @unchecked Sendable {
     var id: UUID
     var name: String
     var address: String
@@ -35,54 +35,6 @@ final class Location: Codable {
         self.locationType = locationType
         self.createdAt = Date()
         self.updatedAt = Date()
-    }
-    
-    // MARK: - Codable Support
-    
-    enum CodingKeys: String, CodingKey {
-        case id, name, address, comment, createdAt, updatedAt, locationType
-        case generalMetrics, financials, scorecard
-        case officeMetrics, hospitalMetrics, schoolMetrics, residentialMetrics
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        name = try container.decode(String.self, forKey: .name)
-        address = try container.decode(String.self, forKey: .address)
-        comment = try container.decode(String.self, forKey: .comment)
-        createdAt = try container.decode(Date.self, forKey: .createdAt)
-        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
-        locationType = try container.decode(LocationType.self, forKey: .locationType)
-        
-        // Optional metrics
-        generalMetrics = try container.decodeIfPresent(GeneralMetrics.self, forKey: .generalMetrics)
-        financials = try container.decodeIfPresent(Financials.self, forKey: .financials)
-        scorecard = try container.decodeIfPresent(Scorecard.self, forKey: .scorecard)
-        officeMetrics = try container.decodeIfPresent(OfficeMetrics.self, forKey: .officeMetrics)
-        hospitalMetrics = try container.decodeIfPresent(HospitalMetrics.self, forKey: .hospitalMetrics)
-        schoolMetrics = try container.decodeIfPresent(SchoolMetrics.self, forKey: .schoolMetrics)
-        residentialMetrics = try container.decodeIfPresent(ResidentialMetrics.self, forKey: .residentialMetrics)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(name, forKey: .name)
-        try container.encode(address, forKey: .address)
-        try container.encode(comment, forKey: .comment)
-        try container.encode(createdAt, forKey: .createdAt)
-        try container.encode(updatedAt, forKey: .updatedAt)
-        try container.encode(locationType, forKey: .locationType)
-        
-        // Optional metrics
-        try container.encodeIfPresent(generalMetrics, forKey: .generalMetrics)
-        try container.encodeIfPresent(financials, forKey: .financials)
-        try container.encodeIfPresent(scorecard, forKey: .scorecard)
-        try container.encodeIfPresent(officeMetrics, forKey: .officeMetrics)
-        try container.encodeIfPresent(hospitalMetrics, forKey: .hospitalMetrics)
-        try container.encodeIfPresent(schoolMetrics, forKey: .schoolMetrics)
-        try container.encodeIfPresent(residentialMetrics, forKey: .residentialMetrics)
     }
     
     // MARK: - Getter Methods for Type-Specific Metrics
@@ -146,13 +98,28 @@ final class Location: Codable {
     // MARK: - Score Calculation
     
     func calculateOverallScore() -> Double {
-        let generalScore = calculateGeneralScore()
-        let typeSpecificScore = calculateTypeSpecificScore()
+        guard let generalMetrics = generalMetrics else {
+            return 0.0
+        }
         
-        let totalScore = generalScore + typeSpecificScore
-        let totalWeight = 2.0
+        // Get the module specific score first
+        let moduleScore: Double
+        switch locationType.type {
+        case .office:
+            moduleScore = officeMetrics?.calculateOverallScore() ?? 0.0
+        case .hospital:
+            moduleScore = hospitalMetrics?.calculateOverallScore() ?? 0.0
+        case .school:
+            moduleScore = schoolMetrics?.calculateOverallScore() ?? 0.0
+        case .residential:
+            moduleScore = residentialMetrics?.calculateOverallScore() ?? 0.0
+        }
         
-        return totalScore / totalWeight
+        // Use the proper weighted scoring method for general metrics
+        let generalScore = generalMetrics.calculateWeightedOverallScore(moduleSpecificScore: moduleScore)
+        
+        // Convert from 0-1 scale back to 0-5 scale for consistency
+        return generalScore * 5.0
     }
     
     private func calculateGeneralScore() -> Double {

@@ -101,23 +101,14 @@ struct ScorecardView: View {
             return 0.0
         }
         
-        // Calculate overall score using manual ratings consistently for all metrics
-        let manualRatings = [
-            Double(generalMetrics.getRating(for: .footTraffic)),
-            Double(generalMetrics.getRating(for: .targetDemographic)),
-            Double(generalMetrics.getRating(for: .hostCommission)),
-            Double(generalMetrics.getRating(for: .competition)),
-            Double(generalMetrics.getRating(for: .visibility)),
-            Double(generalMetrics.getRating(for: .security)),
-            Double(generalMetrics.getRating(for: .parkingTransit)),
-            Double(generalMetrics.getRating(for: .amenities))
-        ]
-        
-        let averageManualRating = manualRatings.reduce(0.0, +) / Double(manualRatings.count)
+        // Get the module specific score first
         let moduleScore = getModuleSpecificScore()
         
-        // Weight: 70% manual ratings, 30% module specific
-        return (averageManualRating * 0.7) + (moduleScore * 0.3)
+        // Use the proper weighted scoring method for general metrics
+        let generalScore = generalMetrics.calculateWeightedOverallScore(moduleSpecificScore: moduleScore)
+        
+        // Convert from 0-1 scale back to 0-5 scale for consistency
+        return generalScore * 5.0
     }
     
     private var decision: LocationDecision {
@@ -158,12 +149,7 @@ struct ScorecardView: View {
     }
     
     private func scoreColor(_ score: Double) -> Color {
-        switch score {
-        case 4.0...5.0: return .green
-        case 3.0..<4.0: return .blue
-        case 2.0..<3.0: return .orange
-        default: return .red
-        }
+        ScoreColorUtility.getScoreColor(score)
     }
     
     private func scoreDescription(_ score: Double) -> String {
@@ -225,12 +211,7 @@ struct ScoreDisplayView: View {
     }
     
     private var scoreColor: Color {
-        switch score {
-        case 4...5: return .green
-        case 3: return .blue
-        case 2: return .orange
-        default: return .red
-        }
+        ScoreColorUtility.getScoreColor(Double(score))
     }
 }
 
@@ -260,12 +241,7 @@ struct ScoreRowView: View {
     }
     
     private var scoreColor: Color {
-        switch score {
-        case 4.0...5.0: return .green
-        case 3.0..<4.0: return .blue
-        case 2.0..<3.0: return .orange
-        default: return .red
-        }
+        ScoreColorUtility.getScoreColor(score)
     }
 }
 

@@ -183,7 +183,7 @@ class MetricDefinition: Identifiable, Codable {
 
 /// Actual metric instance with rating and notes
 @Model
-class MetricInstance: Identifiable, Codable {
+class MetricInstance: Identifiable {
     var id: UUID
     var metricDefinitionKey: String
     var rating: Int
@@ -201,34 +201,6 @@ class MetricInstance: Identifiable, Codable {
         self.ratedAt = rating > 0 ? Date() : nil
     }
     
-    // MARK: - Codable Support
-    
-    enum CodingKeys: String, CodingKey {
-        case id, metricDefinitionKey, rating, notes, isComputed, computedValue, ratedAt
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        metricDefinitionKey = try container.decode(String.self, forKey: .metricDefinitionKey)
-        rating = try container.decode(Int.self, forKey: .rating)
-        notes = try container.decode(String.self, forKey: .notes)
-        isComputed = try container.decode(Bool.self, forKey: .isComputed)
-        computedValue = try container.decodeIfPresent(Double.self, forKey: .computedValue)
-        ratedAt = try container.decodeIfPresent(Date.self, forKey: .ratedAt)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(metricDefinitionKey, forKey: .metricDefinitionKey)
-        try container.encode(rating, forKey: .rating)
-        try container.encode(notes, forKey: .notes)
-        try container.encode(isComputed, forKey: .isComputed)
-        try container.encodeIfPresent(computedValue, forKey: .computedValue)
-        try container.encodeIfPresent(ratedAt, forKey: .ratedAt)
-    }
-    
     func updateRating(_ newRating: Int, notes newNotes: String = "") {
         self.rating = newRating
         self.notes = newNotes
@@ -242,7 +214,7 @@ class MetricInstance: Identifiable, Codable {
 
 /// Centralized metrics manager for a location
 @Model
-class LocationMetrics: Identifiable, Codable {
+class LocationMetrics: Identifiable {
     var id: UUID
     var locationId: UUID
     var locationType: LocationTypeEnum
@@ -255,30 +227,6 @@ class LocationMetrics: Identifiable, Codable {
         self.locationType = locationType
         self.metricInstances = []
         self.lastUpdated = Date()
-    }
-    
-    // MARK: - Codable Support
-    
-    enum CodingKeys: String, CodingKey {
-        case id, locationId, locationType, metricInstances, lastUpdated
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        locationId = try container.decode(UUID.self, forKey: .locationId)
-        locationType = try container.decode(LocationTypeEnum.self, forKey: .locationType)
-        metricInstances = try container.decode([MetricInstance].self, forKey: .metricInstances)
-        lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(locationId, forKey: .locationId)
-        try container.encode(locationType, forKey: .locationType)
-        try container.encode(metricInstances, forKey: .metricInstances)
-        try container.encode(lastUpdated, forKey: .lastUpdated)
     }
     
     // MARK: - Metric Management

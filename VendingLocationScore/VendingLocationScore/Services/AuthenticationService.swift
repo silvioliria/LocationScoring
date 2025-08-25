@@ -14,10 +14,10 @@ class AuthenticationService: ObservableObject {
 	@Published var isLoading = false
 	@Published var errorMessage: String?
 	
-	private let storageService: any StorageService
+	private let dataService: any DataManagementService
 	
 	init() {
-		self.storageService = StorageServiceFactory.createStorageService()
+		self.dataService = DataManagementServiceFactory.createDataManagementService()
 	}
 	
 	func checkAuthenticationState() {
@@ -120,12 +120,10 @@ class AuthenticationService: ObservableObject {
 			// Save user and update state
 			Task {
 				await self.saveUser(debugUser)
-				await MainActor.run {
-					self.isAuthenticated = true
-					self.currentUser = debugUser
-					self.isLoading = false
-					self.errorMessage = nil
-				}
+				self.isAuthenticated = true
+				self.currentUser = debugUser
+				self.isLoading = false
+				self.errorMessage = nil
 			}
 		}
 	}
@@ -144,51 +142,40 @@ class AuthenticationService: ObservableObject {
 		Task {
 			await saveUser(userProfile)
 			
-			await MainActor.run {
-				// Update current state
-				currentUser = userProfile
-				isAuthenticated = true
-				userProfile.updateLastLogin()
-			}
+			// Update current state
+			currentUser = userProfile
+			isAuthenticated = true
+			userProfile.updateLastLogin()
 		}
 	}
 	#endif
 	
 	private func saveUser(_ user: User) async {
 		do {
-			try await storageService.saveUser(user)
-			await MainActor.run {
-				currentUser = user
-			}
+			try await dataService.saveUser(user)
+			currentUser = user
 		} catch {
-			await MainActor.run {
-				errorMessage = "Failed to save user: \(error.localizedDescription)"
-			}
+			errorMessage = "Failed to save user: \(error.localizedDescription)"
 		}
 	}
 	
 	private func fetchLocalUser() async {
 		do {
-			if let user = try await storageService.fetchUser() {
-				await MainActor.run {
-					currentUser = user
-					isAuthenticated = true
-				}
+			let user = try await dataService.fetchUser()
+			if let user = user {
+				currentUser = user
+				isAuthenticated = true
 			}
 		} catch {
-			await MainActor.run {
-				errorMessage = "Failed to fetch local user: \(error.localizedDescription)"
-			}
+			errorMessage = "Failed to fetch local user: \(error.localizedDescription)"
 		}
 	}
 	
 	private func clearLocalUser() async {
 		do {
-			try await storageService.clearUser()
+			try await dataService.clearUser()
 		} catch {
-			await MainActor.run {
-				errorMessage = "Failed to clear local user: \(error.localizedDescription)"
-			}
+			errorMessage = "Failed to clear local user: \(error.localizedDescription)"
 		}
 	}
 }

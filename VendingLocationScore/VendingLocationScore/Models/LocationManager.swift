@@ -105,20 +105,29 @@ class LocationManager {
     // MARK: - Quick Setup Data Application
     
     private func applyQuickSetupData(to location: Location, data: [String: Any]) {
-        // Apply general metrics
-        if let generalData = data["general"] as? [String: Any] {
-            applyGeneralMetricsData(location.generalMetrics, data: generalData)
+        print("🔍 Applying quick setup data: \(data)")
+        
+        // Apply type-specific metrics directly from the data
+        switch location.locationType.type {
+        case .office:
+            if let officeMetrics = location.officeMetrics {
+                applyOfficeMetricsData(officeMetrics, data: data)
+            }
+        case .hospital:
+            if let hospitalMetrics = location.getHospitalMetrics() {
+                applyHospitalMetricsData(hospitalMetrics, data: data)
+            }
+        case .school:
+            if let schoolMetrics = location.getSchoolMetrics() {
+                applySchoolMetricsData(schoolMetrics, data: data)
+            }
+        case .residential:
+            if let residentialMetrics = location.getResidentialMetrics() {
+                applyResidentialMetricsData(residentialMetrics, data: data)
+            }
         }
         
-        // Apply type-specific metrics
-        if let typeData = data["typeSpecific"] as? [String: Any] {
-            applyTypeSpecificData(location, data: typeData)
-        }
-        
-        // Apply financial data
-        if let financialData = data["financial"] as? [String: Any] {
-            applyFinancialData(location.financials, data: financialData)
-        }
+        print("🔍 Quick setup data applied successfully")
     }
     
     private func applyGeneralMetricsData(_ metrics: GeneralMetrics?, data: [String: Any]) {
@@ -163,24 +172,42 @@ class LocationManager {
     }
     
     private func applyOfficeMetricsData(_ metrics: OfficeMetrics, data: [String: Any]) {
-        // Apply office-specific metrics data
-        if let commonAreas = data["commonAreas"] as? Int {
-            metrics.commonAreasRating = commonAreas
+        print("🔍 Applying office metrics data: \(data)")
+        
+        // Apply office-specific metrics data from the UI
+        if let commonAreas = data["commonAreas"] as? String {
+            // Convert string input to rating (1-5) based on content
+            let rating = convertStringToRating(commonAreas)
+            metrics.commonAreasRating = rating
+            metrics.commonAreasNotes = commonAreas
         }
-        if let hoursAccess = data["hoursAccess"] as? Int {
-            metrics.hoursAccessRating = hoursAccess
+        
+        if let buildingHours = data["buildingHours"] as? String {
+            // Convert string input to rating (1-5) based on content
+            let rating = convertStringToRating(buildingHours)
+            metrics.hoursAccessRating = rating
+            metrics.hoursAccessNotes = buildingHours
         }
-        if let tenantAmenities = data["tenantAmenities"] as? Int {
-            metrics.tenantAmenitiesRating = tenantAmenities
-        }
-        if let proximityHubTransit = data["proximityHubTransit"] as? Int {
-            metrics.proximityHubTransitRating = proximityHubTransit
-        }
-        if let brandingRestrictions = data["brandingRestrictions"] as? Int {
-            metrics.brandingRestrictionsRating = brandingRestrictions
-        }
-        if let layoutType = data["layoutType"] as? Int {
-            metrics.layoutTypeRating = layoutType
+        
+        print("🔍 Office metrics applied - Common Areas: \(metrics.commonAreasRating), Hours: \(metrics.hoursAccessRating)")
+    }
+    
+    private func convertStringToRating(_ input: String) -> Int {
+        let lowercased = input.lowercased()
+        
+        // Simple heuristic to convert text to rating
+        if lowercased.contains("excellent") || lowercased.contains("great") || lowercased.contains("24/7") {
+            return 5
+        } else if lowercased.contains("good") || lowercased.contains("adequate") || lowercased.contains("8-6") {
+            return 4
+        } else if lowercased.contains("moderate") || lowercased.contains("standard") || lowercased.contains("9-5") {
+            return 3
+        } else if lowercased.contains("limited") || lowercased.contains("restricted") || lowercased.contains("part-time") {
+            return 2
+        } else if lowercased.contains("poor") || lowercased.contains("minimal") || lowercased.contains("closed") {
+            return 1
+        } else {
+            return 3 // Default to moderate
         }
     }
     
@@ -204,15 +231,31 @@ class LocationManager {
     // MARK: - Score Calculations
     
     func getLocationScoreBreakdown(_ location: Location) -> LocationScoreBreakdown {
-        let generalScore = location.generalMetrics?.calculateOverallScore() ?? 0.0
+        guard let generalMetrics = location.generalMetrics else {
+            return LocationScoreBreakdown(
+                generalScore: 0.0,
+                typeSpecificScore: 0.0,
+                financialScore: 0.0,
+                overallScore: 0.0
+            )
+        }
+        
+        // Get the module specific score first
         let typeSpecificScore = getTypeSpecificScore(location)
         let financialScore = calculateFinancialScore(location.financials)
         
-        let totalScore = generalScore + typeSpecificScore + financialScore
+        // Use the proper weighted scoring method for general metrics
+        let generalScore = generalMetrics.calculateWeightedOverallScore(moduleSpecificScore: typeSpecificScore)
+        
+        // Convert from 0-1 scale back to 0-5 scale for consistency
+        let normalizedGeneralScore = generalScore * 5.0
+        
+        // Calculate overall score using the normalized values
+        let totalScore = normalizedGeneralScore + typeSpecificScore + financialScore
         let totalWeight = 3.0
         
         return LocationScoreBreakdown(
-            generalScore: generalScore,
+            generalScore: normalizedGeneralScore,
             typeSpecificScore: typeSpecificScore,
             financialScore: financialScore,
             overallScore: totalScore / totalWeight

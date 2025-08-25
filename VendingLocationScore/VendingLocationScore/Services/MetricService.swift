@@ -32,12 +32,11 @@ class MetricService: ObservableObject {
     
     /// Get or create location metrics
     func getLocationMetrics(for location: Location, context: ModelContext) throws -> LocationMetrics {
-        // Try to find existing metrics
-        let descriptor = FetchDescriptor<LocationMetrics>(
-            predicate: #Predicate { $0.locationId == location.id }
-        )
+        // Try to find existing metrics by fetching all and filtering
+        let descriptor = FetchDescriptor<LocationMetrics>()
+        let allMetrics = try context.fetch(descriptor)
         
-        if let existingMetrics = try context.fetch(descriptor).first {
+        if let existingMetrics = allMetrics.first(where: { $0.locationId == location.id }) {
             return existingMetrics
         }
         
@@ -45,7 +44,8 @@ class MetricService: ObservableObject {
         try initializeMetrics(for: location, context: context)
         
         // Fetch the newly created metrics
-        if let newMetrics = try context.fetch(descriptor).first {
+        let newAllMetrics = try context.fetch(descriptor)
+        if let newMetrics = newAllMetrics.first(where: { $0.locationId == location.id }) {
             return newMetrics
         }
         

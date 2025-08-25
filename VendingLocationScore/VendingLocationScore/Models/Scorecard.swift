@@ -112,21 +112,21 @@ final class Scorecard: Codable {
         self.generalScore = score
         self.generalNotes = notes
         lastUpdated = Date()
-        calculateOverallScore()
+        self.overallScore = calculateOverallScore()
     }
     
     func updateTypeSpecificScore(_ score: Double, notes: String = "") {
         self.typeSpecificScore = score
         self.typeSpecificNotes = notes
         lastUpdated = Date()
-        calculateOverallScore()
+        self.overallScore = calculateOverallScore()
     }
     
     func updateFinancialScore(_ score: Double, notes: String = "") {
         self.financialScore = score
         self.financialNotes = notes
         lastUpdated = Date()
-        calculateOverallScore()
+        self.overallScore = calculateOverallScore()
     }
     
     func updateMetricsScore(for type: LocationTypeEnum, score: Double) {

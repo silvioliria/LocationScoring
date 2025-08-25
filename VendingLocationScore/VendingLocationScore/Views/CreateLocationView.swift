@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 
 struct CreateLocationView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var storageService: LocalStorageService
+    @Environment(\.modelContext) private var context
+    @State private var dataService = DataManagementServiceFactory.createDataManagementService()
     
     let onLocationCreated: (Location) -> Void
     
@@ -28,7 +30,6 @@ struct CreateLocationView: View {
     
     init(onLocationCreated: @escaping (Location) -> Void) {
         self.onLocationCreated = onLocationCreated
-        self._storageService = StateObject(wrappedValue: LocalStorageService.shared)
     }
     
     var body: some View {
@@ -60,6 +61,12 @@ struct CreateLocationView: View {
             .overlay {
                 if isCreating {
                     LoadingView()
+                }
+            }
+            .onAppear {
+                // Set the context in the data service
+                if let localDataService = dataService as? LocalDataService {
+                    localDataService.setContext(context)
                 }
             }
         }
@@ -509,6 +516,12 @@ struct CreateLocationView: View {
         do {
             print("🔍 Creating location with name: '\(name)', address: '\(address)', type: \(selectedLocationType)")
             
+            // Validate required fields
+            guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw NSError(domain: "ValidationError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Name and address are required"])
+            }
+            
             // Use the new LocationManager to create the location
             let location = LocationManager.shared.createLocationWithQuickSetup(
                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -524,14 +537,22 @@ struct CreateLocationView: View {
             print("🔍 Has financials: \(location.financials != nil)")
             print("🔍 Has scorecard: \(location.scorecard != nil)")
             
-            print("🔍 Saving location to storage...")
-            _ = try await storageService.saveLocation(location)
+            // Validate the created location
+            guard location.generalMetrics != nil,
+                  location.financials != nil,
+                  location.scorecard != nil else {
+                throw NSError(domain: "CreationError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize location components"])
+            }
+            
+            print("🔍 Saving location using data service...")
+            try await dataService.createLocation(location)
             print("🔍 Location saved successfully!")
             
-            await MainActor.run {
-                onLocationCreated(location)
-                dismiss()
-            }
+            // Call the callback to notify parent view
+            onLocationCreated(location)
+            
+            // Return to the previous view
+            dismiss()
         } catch {
             print("🔍 Error creating location: \(error)")
             await MainActor.run {

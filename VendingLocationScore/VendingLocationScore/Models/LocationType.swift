@@ -3,31 +3,13 @@ import SwiftData
 // import CloudKit  // Temporarily disabled for Personal Team development
 
 @Model
-final class LocationType: Codable {
+final class LocationType {
     var type: LocationTypeEnum
     var displayName: String
     
     init(type: LocationTypeEnum, displayName: String? = nil) {
         self.type = type
         self.displayName = displayName ?? type.displayName
-    }
-    
-    // MARK: - Codable Support
-    
-    enum CodingKeys: String, CodingKey {
-        case type, displayName
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(LocationTypeEnum.self, forKey: .type)
-        displayName = try container.decode(String.self, forKey: .displayName)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        try container.encode(displayName, forKey: .displayName)
     }
 }
 

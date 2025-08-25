@@ -1,17 +1,12 @@
 import Foundation
 
-// MARK: - Storage Service Protocol
+// MARK: - Storage Service Protocol (User-only, locations now use SwiftData)
 @preconcurrency
 protocol StorageService: ObservableObject {
     var isAvailable: Bool { get }
     var error: String? { get set }
     
-    // Location operations
-    func saveLocation(_ location: Location) async throws -> Location
-    func fetchLocations() async throws -> [Location]
-    func deleteLocation(_ location: Location) async throws
-    
-    // User operations
+    // User operations only (locations now use SwiftData)
     func saveUser(_ user: User) async throws
     func fetchUser() async throws -> User?
     func clearUser() async throws

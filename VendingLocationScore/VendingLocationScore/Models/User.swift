@@ -3,7 +3,7 @@ import SwiftData
 // import CloudKit  // Temporarily disabled for Personal Team development
 
 @Model
-final class User: Codable {
+final class User: Codable, Sendable {
     var id: String
     var name: String
     var email: String

@@ -71,12 +71,7 @@ struct ModuleOverviewCard: View {
     
     private var scoreColor: Color {
         let score = getModuleSpecificScore()
-        switch score {
-        case 4.0...5.0: return .green
-        case 3.0..<4.0: return .blue
-        case 2.0..<3.0: return .orange
-        default: return .red
-        }
+        return ScoreColorUtility.getScoreColor(score)
     }
     
     private func getModuleSpecificScore() -> Double {

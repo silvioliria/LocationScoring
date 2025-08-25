@@ -565,19 +565,11 @@ enum MetricType: CaseIterable, Identifiable {
 }
 
 #Preview {
-            let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
-    
     let locationType = LocationType(type: .office)
     let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
     
-    // Set up the location outside the ViewBuilder
+    // Set up the location
     location.generalMetrics = GeneralMetrics()
     
-    // Insert into context outside the ViewBuilder
-    context.insert(location)
-    
-                    let _ = location.generalMetrics!
-    
     return MetricDetailView(location: location, metricType: .footTraffic, onDataChanged: {})
-        .modelContainer(context.container)
 }

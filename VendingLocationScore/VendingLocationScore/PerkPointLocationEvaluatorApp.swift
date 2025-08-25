@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct PerkPointLocationEvaluatorApp: App {
@@ -6,5 +7,17 @@ struct PerkPointLocationEvaluatorApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [
+            Location.self,
+            LocationType.self,
+            OfficeMetrics.self,
+            HospitalMetrics.self,
+            SchoolMetrics.self,
+            ResidentialMetrics.self,
+            GeneralMetrics.self,
+            Financials.self,
+            Scorecard.self,
+            User.self
+        ])
     }
 }

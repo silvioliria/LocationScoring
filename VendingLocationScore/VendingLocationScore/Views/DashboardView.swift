@@ -500,31 +500,14 @@ struct PerformanceOverviewCard: View {
             return 0.0
         }
         
-        // Calculate overall score using manual ratings consistently for all metrics
-        let manualRatings = [
-            Double(generalMetrics.getRating(for: .footTraffic)),
-            Double(generalMetrics.getRating(for: .targetDemographic)),
-            Double(generalMetrics.getRating(for: .hostCommission)),
-            Double(generalMetrics.getRating(for: .competition)),
-            Double(generalMetrics.getRating(for: .visibility)),
-            Double(generalMetrics.getRating(for: .hostCommission)),
-            Double(generalMetrics.getRating(for: .parkingTransit)),
-            Double(generalMetrics.getRating(for: .amenities))
-        ]
-        
-        // Filter out unrated metrics (rating = 0)
-        let ratedMetrics = manualRatings.filter { $0 > 0 }
-        
-        // Require at least 3 metrics to be rated before calculating a meaningful score
-        if ratedMetrics.count < 3 {
-            return 0.0
-        }
-        
-        let averageManualRating = ratedMetrics.reduce(0.0, +) / Double(ratedMetrics.count)
+        // Get the module specific score first
         let moduleScore = getModuleSpecificScore()
         
-        // Weight: 70% manual ratings, 30% module specific
-        return (averageManualRating * 0.7) + (moduleScore * 0.3)
+        // Use the proper weighted scoring method for general metrics
+        let generalScore = generalMetrics.calculateWeightedOverallScore(moduleSpecificScore: moduleScore)
+        
+        // Convert from 0-1 scale back to 0-5 scale for consistency
+        return generalScore * 5.0
     }
     
     // MARK: - Helper Methods
