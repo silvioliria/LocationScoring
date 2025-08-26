@@ -8,6 +8,7 @@ struct LocationListView: View {
     @State private var showingCreateLocation = false
     @State private var showingDeleteAlert = false
     @State private var locationToDelete: Location?
+    @State private var justAddedLocation = false // New state variable
     
     init() {
         // Initialize without the service - will be created when context is available
@@ -82,6 +83,7 @@ struct LocationListView: View {
                         
                         // No background refresh needed - the item is already in the database
                         // and we've inserted it into the UI list
+                        justAddedLocation = true // Set flag to true
                     },
                     modelContext: context
                 )
@@ -107,8 +109,14 @@ struct LocationListView: View {
                 // Start memory monitoring
                 memoryMonitor.startMonitoring()
                 
-                Task {
-                    await lazyLoadingService?.refresh()
+                // Only refresh if we haven't just added a new location
+                if !justAddedLocation {
+                    Task {
+                        await lazyLoadingService?.refresh()
+                    }
+                } else {
+                    // Reset the flag since we've handled the new location
+                    justAddedLocation = false
                 }
             }
             .onDisappear {
