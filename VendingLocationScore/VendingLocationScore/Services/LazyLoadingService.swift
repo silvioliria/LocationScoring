@@ -50,6 +50,18 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
     
     // MARK: - Public Methods
     
+    /// Inserts a new item at the beginning of the list for instant visual feedback
+    /// This provides immediate UI updates while maintaining existing data
+    /// - Parameter newItem: The new item to insert
+    func insertNewItem(_ newItem: T) {
+        print("🔄 LazyLoadingService.insertNewItem() called for: \(newItem)")
+        
+        // Insert the new item at the beginning (most recent first)
+        items.insert(newItem, at: 0)
+        
+        print("🔄 New item inserted, total count: \(items.count)")
+    }
+
     /// Refreshes the data by resetting pagination and loading the first page
     func refresh() async {
         print("🔄 LazyLoadingService.refresh() called")

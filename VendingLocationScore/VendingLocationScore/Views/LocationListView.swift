@@ -73,13 +73,18 @@ struct LocationListView: View {
                 CreateLocationView(
                     onLocationCreated: { location in
                         // Location has been successfully saved to database
-                        // Now refresh the list to show the new data
+                        // Insert it immediately for instant visual feedback
                         print("📍 Location created and saved: \(location.name)")
-                        print("📍 Refreshing list from database")
+                        print("📍 Inserting to UI list immediately")
                         
+                        // Instant UI update - insert at top of list
+                        lazyLoadingService?.insertNewItem(location)
+                        
+                        // Optional: Refresh in background to ensure consistency
+                        // This won't affect the UI since we already inserted the item
                         Task {
                             await lazyLoadingService?.refresh()
-                            print("📍 List refreshed from database")
+                            print("📍 Background refresh completed")
                         }
                     },
                     modelContext: context
