@@ -116,30 +116,17 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
         }
     }
     
-    /// Immediately adds a new item to the list and refreshes in the background
-    /// This provides instant visual feedback while ensuring data consistency
+    /// Immediately adds a new item to the list for instant visual feedback
+    /// This provides immediate UI updates without database operations
     /// - Parameter newItem: The new item to add
-    func addItemAndRefresh(_ newItem: T) async {
-        print("🔄 LazyLoadingService.addItemAndRefresh() called for: \(newItem)")
+    func addItem(_ newItem: T) {
+        print("🔄 LazyLoadingService.addItem() called for: \(newItem)")
         
-        // Store current items to maintain visual continuity
-        let currentItems = items
-        let currentPage = self.currentPage
+        // Simply add the new item to the beginning of the list
+        // This provides instant visual feedback
+        items.insert(newItem, at: 0)
         
-        // Set loading state but don't clear the list yet
-        isLoading = true
-        
-        // Refresh the data in the background
-        await refresh()
-        
-        // If refresh failed or returned no items, restore the previous state
-        if items.isEmpty && !currentItems.isEmpty {
-            print("🔄 Refresh returned no items, restoring previous state")
-            items = currentItems
-            self.currentPage = currentPage
-        }
-        
-        isLoading = false
+        print("🔄 Item added, new count: \(items.count)")
     }
     
     /// Filters the data using a predicate and resets pagination

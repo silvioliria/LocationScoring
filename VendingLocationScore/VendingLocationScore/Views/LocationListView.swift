@@ -77,10 +77,9 @@ struct LocationListView: View {
                         print("📍 About to add item and refresh LazyLoadingService")
                         print("📍 Service exists: \(lazyLoadingService != nil)")
                         
-                        Task {
-                            await lazyLoadingService?.addItemAndRefresh(location)
-                            print("📍 Add and refresh completed, items count: \(lazyLoadingService?.items.count ?? 0)")
-                        }
+                        // Immediately add the new location to the list for instant feedback
+                        lazyLoadingService?.addItem(location)
+                        print("📍 Location added to list, items count: \(lazyLoadingService?.items.count ?? 0)")
                     },
                     modelContext: context
                 )
