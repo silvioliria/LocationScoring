@@ -80,12 +80,8 @@ struct LocationListView: View {
                         // Instant UI update - insert at top of list
                         lazyLoadingService?.insertNewItem(location)
                         
-                        // Optional: Refresh in background to ensure consistency
-                        // This won't affect the UI since we already inserted the item
-                        Task {
-                            await lazyLoadingService?.refresh()
-                            print("📍 Background refresh completed")
-                        }
+                        // No background refresh needed - the item is already in the database
+                        // and we've inserted it into the UI list
                     },
                     modelContext: context
                 )
