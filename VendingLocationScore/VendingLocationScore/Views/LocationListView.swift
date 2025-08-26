@@ -103,9 +103,16 @@ struct LocationListView: View {
                     createLazyLoadingService()
                 }
                 
+                // Start memory monitoring
+                memoryMonitor.startMonitoring()
+                
                 Task {
                     await lazyLoadingService?.refresh()
                 }
+            }
+            .onDisappear {
+                // Stop memory monitoring when view disappears
+                memoryMonitor.stopMonitoring()
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 // Refresh data when app comes to foreground
@@ -226,7 +233,7 @@ struct LocationListView: View {
         
         lazyLoadingService = LazyLoadingService<Location, LocationRepository>(
             repository: locationRepository,
-            pageSize: 20,
+            config: .default,
             sortBy: [SortDescriptor(\.name, order: .forward)] // Default sort by name
         )
         print("🔧 LazyLoadingService created: \(lazyLoadingService != nil)")
