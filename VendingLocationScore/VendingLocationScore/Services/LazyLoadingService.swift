@@ -54,9 +54,11 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
     func refresh() async {
         print("🔄 LazyLoadingService.refresh() called")
         currentPage = 0
-        items = []
         hasMoreItems = true
         errorMessage = nil
+        
+        // Don't clear items immediately to maintain visual continuity
+        // Items will be replaced when new data arrives
         
         print("🔄 About to call loadNextPage()")
         await loadNextPage()
@@ -83,8 +85,10 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
             print("🔄 loadNextPage: Repository returned \(result.items.count) items, totalCount: \(result.totalCount)")
             
             if currentPage == 0 {
+                // This is a refresh, replace all items
                 items = result.items
             } else {
+                // This is loading more pages, append to existing items
                 items.append(contentsOf: result.items)
             }
             
@@ -110,6 +114,32 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
            itemIndex >= thresholdIndex {
             await loadNextPage()
         }
+    }
+    
+    /// Immediately adds a new item to the list and refreshes in the background
+    /// This provides instant visual feedback while ensuring data consistency
+    /// - Parameter newItem: The new item to add
+    func addItemAndRefresh(_ newItem: T) async {
+        print("🔄 LazyLoadingService.addItemAndRefresh() called for: \(newItem)")
+        
+        // Store current items to maintain visual continuity
+        let currentItems = items
+        let currentPage = self.currentPage
+        
+        // Set loading state but don't clear the list yet
+        isLoading = true
+        
+        // Refresh the data in the background
+        await refresh()
+        
+        // If refresh failed or returned no items, restore the previous state
+        if items.isEmpty && !currentItems.isEmpty {
+            print("🔄 Refresh returned no items, restoring previous state")
+            items = currentItems
+            self.currentPage = currentPage
+        }
+        
+        isLoading = false
     }
     
     /// Filters the data using a predicate and resets pagination

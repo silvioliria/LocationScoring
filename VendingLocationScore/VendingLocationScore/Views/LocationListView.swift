@@ -72,14 +72,14 @@ struct LocationListView: View {
             .sheet(isPresented: $showingCreateLocation) {
                 CreateLocationView(
                     onLocationCreated: { location in
-                        // Refresh the data after creating a new location
+                        // Immediately add the new location and refresh in background
                         print("📍 Location created: \(location.name)")
-                        print("📍 About to refresh LazyLoadingService")
+                        print("📍 About to add item and refresh LazyLoadingService")
                         print("📍 Service exists: \(lazyLoadingService != nil)")
                         
                         Task {
-                            await lazyLoadingService?.refresh()
-                            print("📍 Refresh completed, items count: \(lazyLoadingService?.items.count ?? 0)")
+                            await lazyLoadingService?.addItemAndRefresh(location)
+                            print("📍 Add and refresh completed, items count: \(lazyLoadingService?.items.count ?? 0)")
                         }
                     },
                     modelContext: context
