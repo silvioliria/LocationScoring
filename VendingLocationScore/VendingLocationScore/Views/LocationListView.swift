@@ -3,54 +3,58 @@ import SwiftData
 
 struct LocationListView: View {
     @Environment(\.modelContext) private var context
-    @State private var dataService = DataManagementServiceFactory.createDataManagementService()
-    @State private var locations: [Location] = []
+    @State private var lazyLoadingService: LazyLoadingService<Location, LocationRepository>?
+    @StateObject private var memoryMonitor = MemoryMonitor()
     @State private var showingCreateLocation = false
     @State private var showingDeleteAlert = false
     @State private var locationToDelete: Location?
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    
+    init() {
+        // Initialize without the service - will be created when context is available
+    }
     
     var body: some View {
         NavigationView {
             VStack {
-                if isLoading {
-                    ProgressView("Loading locations...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if locations.isEmpty {
-                    EmptyStateView.locationsEmptyState {
-                        showingCreateLocation = true
+                // Content
+                if let service = lazyLoadingService {
+                    if service.items.isEmpty && !service.isLoading {
+                        emptyStateView
+                    } else {
+                        locationList
+                    }
+                    
+                    // Loading Indicator
+                    if service.isLoading {
+                        loadingIndicator
+                    }
+                    
+                    // Error View
+                    if let errorMessage = service.errorMessage {
+                        errorView(message: errorMessage)
                     }
                 } else {
-                    List {
-                        ForEach(locations) { location in
-                            ListRowContainer(destination: LocationEvaluationView(location: location)) {
-                                LocationRowView(location: location)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                            }
-                        }
-                        .onDelete(perform: deleteLocations)
-                    }
-                    .listStyle(PlainListStyle())
-                    .environment(\.defaultMinListRowHeight, 80)
+                    // Service not initialized yet
+                    ProgressView("Initializing...")
                 }
             }
             .navigationTitle("Locations")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingCreateLocation = true
-                    }) {
-                        Image(systemName: "plus")
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        refreshData()
-                    }) {
-                        Image(systemName: "arrow.clockwise")
+                    HStack {
+                        Button(action: {
+                            showingCreateLocation = true
+                        }) {
+                            Image(systemName: "plus")
+                        }
+                        
+                        Button(action: {
+                            Task {
+                                await lazyLoadingService?.refresh()
+                            }
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                 }
                 
@@ -66,19 +70,20 @@ struct LocationListView: View {
                 }
             }
             .sheet(isPresented: $showingCreateLocation) {
-                CreateLocationView(onLocationCreated: { location in
-                    // Refresh the data after creating a new location
-                    print("🔍 Location created callback triggered for: \(location.name)")
-                    print("🔍 Location ID: \(location.id)")
-                    print("🔍 Location type: \(location.locationType.type)")
-                    print("🔍 About to call refreshData()")
-                    
-                    // Force a refresh and ensure we're on the main thread
-                    DispatchQueue.main.async {
-                        print("🔍 Calling refreshData() from main thread")
-                        refreshData()
-                    }
-                })
+                CreateLocationView(
+                    onLocationCreated: { location in
+                        // Refresh the data after creating a new location
+                        print("📍 Location created: \(location.name)")
+                        print("📍 About to refresh LazyLoadingService")
+                        print("📍 Service exists: \(lazyLoadingService != nil)")
+                        
+                        Task {
+                            await lazyLoadingService?.refresh()
+                            print("📍 Refresh completed, items count: \(lazyLoadingService?.items.count ?? 0)")
+                        }
+                    },
+                    modelContext: context
+                )
             }
             .alert("Delete Location", isPresented: $showingDeleteAlert) {
                 Button("Delete", role: .destructive) {
@@ -92,87 +97,158 @@ struct LocationListView: View {
             } message: {
                 Text("Are you sure you want to delete this location? This action cannot be undone.")
             }
-            .alert("Error", isPresented: .constant(errorMessage != nil)) {
-                Button("OK") {
-                    errorMessage = nil
-                }
-            } message: {
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                }
-            }
             .onAppear {
-                // Set the context in the data service
-                if let localDataService = dataService as? LocalDataService {
-                    localDataService.setContext(context)
+                // Create the service if it doesn't exist
+                if lazyLoadingService == nil {
+                    createLazyLoadingService()
                 }
-                refreshData()
+                
+                Task {
+                    await lazyLoadingService?.refresh()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 // Refresh data when app comes to foreground
-                refreshData()
+                Task {
+                    await lazyLoadingService?.refresh()
+                }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                 // Refresh data when app becomes active
-                refreshData()
+                Task {
+                    await lazyLoadingService?.refresh()
+                }
             }
             .refreshable {
-                refreshData()
+                await lazyLoadingService?.refresh()
             }
         }
+    }
+    
+    // MARK: - Location List
+    private var locationList: some View {
+        Group {
+            if let service = lazyLoadingService {
+                List {
+                    ForEach(service.items, id: \.id) { location in
+                        NavigationLink(destination: LocationEvaluationView(location: location)) {
+                            LocationRowView(location: location)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onAppear {
+                            // Load more items when approaching the end
+                            Task {
+                                await service.loadMoreIfNeeded(currentItem: location)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button("Delete", role: .destructive) {
+                                locationToDelete = location
+                                showingDeleteAlert = true
+                            }
+                        }
+                    }
+                }
+                .listStyle(PlainListStyle())
+            } else {
+                EmptyView()
+            }
+        }
+    }
+    
+    // MARK: - Empty State View
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+            
+            Text("No Locations Yet")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Create your first location to get started")
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Create Location") {
+                showingCreateLocation = true
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+    
+    // MARK: - Loading Indicator
+    private var loadingIndicator: some View {
+        HStack {
+            ProgressView()
+                .scaleEffect(0.8)
+            Text("Loading...")
+                .foregroundColor(.secondary)
+        }
+        .padding()
+    }
+    
+    // MARK: - Error View
+    private func errorView(message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title)
+                .foregroundColor(.red)
+            
+            Text("Error")
+                .font(.headline)
+            
+            Text(message)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Retry") {
+                Task {
+                    await lazyLoadingService?.refresh()
+                }
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(12)
+        .padding()
+    }
+    
+    // MARK: - Setup Methods
+    
+    private func createLazyLoadingService() {
+        print("🔧 Creating LazyLoadingService...")
+        let locationRepository = LocationRepository(context: context)
+        print("🔧 LocationRepository created with context: \(context)")
+        
+        lazyLoadingService = LazyLoadingService<Location, LocationRepository>(
+            repository: locationRepository,
+            pageSize: 20,
+            sortBy: [SortDescriptor(\.name, order: .forward)] // Default sort by name
+        )
+        print("🔧 LazyLoadingService created: \(lazyLoadingService != nil)")
     }
     
     // MARK: - Data Operations
     
-    private func refreshData() {
-        print("🔍 Starting data refresh...")
-        print("🔍 Current locations count: \(locations.count)")
-        
-        Task {
-            do {
-                let fetchedLocations = try await dataService.fetchLocations()
-                print("🔍 Raw fetch result count: \(fetchedLocations.count)")
-                
-                // Print details of each fetched location
-                for (index, location) in fetchedLocations.enumerated() {
-                    print("🔍 Fetched location \(index): \(location.name) (ID: \(location.id), Type: \(location.locationType.type))")
-                }
-                
-                // Update the state on the main thread
-                await MainActor.run {
-                    print("🔍 Updating UI with \(fetchedLocations.count) locations")
-                    self.locations = fetchedLocations
-                    print("🔍 Data refresh completed, locations count: \(self.locations.count)")
-                    for location in self.locations {
-                        print("🔍 - Location: \(location.name) (ID: \(location.id))")
-                    }
-                }
-            } catch {
-                print("🔍 Error fetching locations: \(error)")
-                print("🔍 Error details: \(error.localizedDescription)")
-                await MainActor.run {
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func deleteLocations(offsets: IndexSet) {
-        for index in offsets {
-            locationToDelete = locations[index]
-            showingDeleteAlert = true
-        }
-    }
-    
     private func deleteLocation(_ location: Location) async {
         do {
-            try await dataService.deleteLocation(location)
-            refreshData()
+            let locationRepository = LocationRepository(context: context)
+            try await locationRepository.delete(location)
+            
+            // Refresh the data
+            await lazyLoadingService?.refresh()
+            
         } catch {
-            errorMessage = error.localizedDescription
+            print("❌ Error deleting location: \(error)")
         }
     }
 }
+
+// Note: MockRepository is no longer needed as we use LocationRepository from the start
 
 // MARK: - Location Row View
 struct LocationRowView: View {

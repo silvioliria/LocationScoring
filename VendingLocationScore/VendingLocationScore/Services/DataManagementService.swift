@@ -5,27 +5,44 @@ import Combine
 // MARK: - Data Management Service Protocol
 @preconcurrency
 protocol DataManagementService: ObservableObject {
-    var isAvailable: Bool { get }
-    var error: String? { get set }
+    var context: ModelContext? { get set }
     
-    // Location operations
-    func createLocation(_ location: Location) async throws
+    // MARK: - Location Management
+    func createLocation(name: String, address: String, comment: String?, locationType: LocationTypeEnum) async throws -> Location
     func fetchLocations() async throws -> [Location]
     func updateLocation(_ location: Location) async throws
     func deleteLocation(_ location: Location) async throws
     
-    // User operations
+    // MARK: - Metrics Management
+    func saveMetrics(_ metrics: Any) async throws
+    func fetchMetrics(for location: Location) async throws -> Any
+    
+    // MARK: - User operations
     func saveUser(_ user: User) async throws
     func fetchUser() async throws -> User?
     func clearUser() async throws
     
-    // Metrics operations
-    func saveMetrics(_ metrics: any MetricBase) async throws
-    func fetchMetrics(for locationId: UUID) async throws -> [any MetricBase]
-    
-    // Sync operations
+    // MARK: - Sync operations
     func syncData() async throws
     func isDataSynced() async -> Bool
+}
+
+// MARK: - Shared ModelContext Access
+@MainActor
+class SharedModelContext: ObservableObject {
+    static let shared = SharedModelContext()
+    
+    @Published var context: ModelContext?
+    
+    private init() {}
+    
+    func setContext(_ context: ModelContext) {
+        self.context = context
+    }
+    
+    func getContext() -> ModelContext? {
+        return context
+    }
 }
 
 // MARK: - Data Management Service Factory
@@ -48,9 +65,10 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
     
     var isAvailable: Bool { true } // Always available locally
     
-    private var context: ModelContext?
+    var context: ModelContext?
     private let userDefaults = UserDefaults.standard
     private let userKey = "current_user"
+    private let validationService = DataValidationService.shared
     
     private init() {}
     
@@ -58,17 +76,35 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
         self.context = context
     }
     
-    // MARK: - Location Operations
+    // MARK: - Location Management
     
-    func createLocation(_ location: Location) async throws {
+    func createLocation(name: String, address: String, comment: String?, locationType: LocationTypeEnum) async throws -> Location {
         guard let context = context else {
             throw NSError(domain: "DataServiceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelContext not set"])
+        }
+        
+        print("🔍 Creating location with name: '\(name)', address: '\(address)', type: \(locationType)")
+        
+        // Use LocationManager to create the location
+        let location = LocationManager.shared.createLocation(name: name, address: address, type: locationType, comment: comment ?? "")
+        
+        // Validate location before saving
+        let validation = validationService.validateLocation(location)
+        if validation.hasErrors {
+            let errorMessage = "Location validation failed: " + validation.errors.joined(separator: "; ")
+            throw NSError(domain: "ValidationError", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Log warnings if any
+        if validation.hasWarnings {
+            print("⚠️ Location validation warnings: \(validation.warnings.joined(separator: "; "))")
         }
         
         do {
             context.insert(location)
             try context.save()
             print("🔍 Location created successfully: \(location.name)")
+            return location
         } catch {
             await MainActor.run {
                 self.error = "Failed to create location: \(error.localizedDescription)"
@@ -79,15 +115,25 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
     
     func fetchLocations() async throws -> [Location] {
         guard let context = context else {
+            print("🔍 ERROR: ModelContext not set in DataManagementService")
             throw NSError(domain: "DataServiceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelContext not set"])
         }
         
+        print("🔍 ModelContext is set, attempting to fetch locations...")
+        
         do {
             let descriptor = FetchDescriptor<Location>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+            print("🔍 FetchDescriptor created, about to call context.fetch...")
             let locations = try context.fetch(descriptor)
-            print("🔍 Fetched \(locations.count) locations")
+            print("🔍 Successfully fetched \(locations.count) locations from SwiftData")
             return locations
         } catch {
+            print("🔍 ERROR in fetchLocations: \(error)")
+            print("🔍 Error type: \(type(of: error))")
+            if let nsError = error as NSError? {
+                print("🔍 NSError domain: \(nsError.domain), code: \(nsError.code)")
+                print("🔍 NSError userInfo: \(nsError.userInfo)")
+            }
             await MainActor.run {
                 self.error = "Failed to fetch locations: \(error.localizedDescription)"
             }
@@ -98,6 +144,18 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
     func updateLocation(_ location: Location) async throws {
         guard let context = context else {
             throw NSError(domain: "DataServiceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelContext not set"])
+        }
+        
+        // Validate location before updating
+        let validation = validationService.validateLocation(location)
+        if validation.hasErrors {
+            let errorMessage = "Validation failed: " + validation.errors.joined(separator: "; ")
+            throw NSError(domain: "ValidationError", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Log warnings if any
+        if validation.hasWarnings {
+            print("⚠️ Location validation warnings: \(validation.warnings.joined(separator: "; "))")
         }
         
         do {
@@ -131,6 +189,18 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
     // MARK: - User Operations
     
     func saveUser(_ user: User) async throws {
+        // Validate user before saving
+        let validation = validationService.validateUser(user)
+        if validation.hasErrors {
+            let errorMessage = "User validation failed: " + validation.errors.joined(separator: "; ")
+            throw NSError(domain: "ValidationError", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        
+        // Log warnings if any
+        if validation.hasWarnings {
+            print("⚠️ User validation warnings: \(validation.warnings.joined(separator: "; "))")
+        }
+        
         do {
             let data = try JSONEncoder().encode(user)
             userDefaults.set(data, forKey: userKey)
@@ -166,10 +236,14 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
     
     // MARK: - Metrics Operations
     
-    func saveMetrics(_ metrics: any MetricBase) async throws {
+    func saveMetrics(_ metrics: Any) async throws {
         guard let context = context else {
             throw NSError(domain: "DataServiceError", code: 1, userInfo: [NSLocalizedDescriptionKey: "ModelContext not set"])
         }
+        
+        // Since GeneralMetrics doesn't conform to MetricBase, we'll handle this differently
+        // For now, just save the context without validation
+        print("🔍 Saving metrics (type: \(type(of: metrics)))")
         
         do {
             try context.save()
@@ -182,11 +256,18 @@ class LocalDataService: ObservableObject, @preconcurrency DataManagementService 
         }
     }
     
-    func fetchMetrics(for locationId: UUID) async throws -> [any MetricBase] {
+    func fetchMetrics(for location: Location) async throws -> Any {
         // This is a simplified implementation - you might want to expand this
         // based on your specific metrics structure
-        print("🔍 Fetching metrics for location: \(locationId)")
-        return []
+        print("🔍 Fetching metrics for location: \(location.name)")
+        
+        // For now, return the general metrics if they exist
+        if let generalMetrics = location.generalMetrics {
+            return generalMetrics
+        }
+        
+        // If no metrics exist, throw an error
+        throw NSError(domain: "DataServiceError", code: 4, userInfo: [NSLocalizedDescriptionKey: "No metrics found for location"])
     }
     
     // MARK: - Sync Operations

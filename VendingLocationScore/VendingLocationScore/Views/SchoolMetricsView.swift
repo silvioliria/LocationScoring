@@ -240,7 +240,7 @@ struct CompactSchoolScoreWidget: View {
 
 struct SchoolMetricsView_Previews: PreviewProvider {
     static var previews: some View {
-        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
         
         let locationType = LocationType(type: .school)
         let location = Location(name: "Sample School", address: "123 Education St", comment: "Test school location", locationType: locationType)
@@ -258,6 +258,6 @@ struct SchoolMetricsView_Previews: PreviewProvider {
         context.insert(location)
         
         return SchoolMetricsView(location: location, onDataChanged: {})
-            .modelContainer(context.container)
+            .environmentObject(SharedModelContext.shared)
     }
 }

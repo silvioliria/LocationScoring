@@ -17,7 +17,11 @@ struct PerkPointLocationEvaluatorApp: App {
             GeneralMetrics.self,
             Financials.self,
             Scorecard.self,
-            User.self
+            User.self,
+            // Centralized metrics system models
+            MetricDefinition.self,
+            MetricInstance.self,
+            LocationMetrics.self
         ])
     }
 }

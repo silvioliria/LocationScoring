@@ -129,9 +129,9 @@ struct ScoresCard: View {
                 
                 MetricCard(
                     title: "Net Profit",
-                    value: (location.financials?.netProfit ?? 0).formatted(.currency(code: "USD")),
+                    value: (location.financials?.netMonthly ?? 0).formatted(.currency(code: "USD")),
                     subtitle: "projected",
-                    score: Int((location.financials?.profitMarginPercentage ?? 0) / 20), // Convert percentage to 1-5 scale
+                    score: Int((location.financials?.perVendMarginPct ?? 0) * 20), // Convert percentage to 1-5 scale
                     color: .green
                 )
                 
@@ -619,7 +619,7 @@ struct PerformanceOverviewCard: View {
 
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
         
         let locationType = LocationType(type: .office)
         let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
@@ -633,6 +633,6 @@ struct DashboardView_Previews: PreviewProvider {
         context.insert(location)
         
         return DashboardView(location: location, selectedTab: .constant(0))
-            .modelContainer(context.container)
+            .environmentObject(SharedModelContext.shared)
     }
 }

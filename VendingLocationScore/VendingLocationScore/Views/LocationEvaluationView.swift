@@ -51,31 +51,33 @@ struct LocationEvaluationView: View {
     
     @ViewBuilder
     private var moduleMetricsTab: some View {
-        switch location.locationType.type {
-        case .office:
-            OfficeMetricsView(location: location, onDataChanged: refreshData)
-                .tabItem {
-                    Image(systemName: location.locationType.type.icon)
-                    Text("Office Metrics")
-                }
-        case .hospital:
-            HospitalMetricsView(location: location, onDataChanged: refreshData)
-                .tabItem {
-                    Image(systemName: location.locationType.type.icon)
-                    Text("Hospital Metrics")
-                }
-        case .school:
-            SchoolMetricsView(location: location, onDataChanged: refreshData)
-                .tabItem {
-                    Image(systemName: location.locationType.type.icon)
-                    Text("School Metrics")
-                }
-        case .residential:
-            ResidentialMetricsView(location: location, onDataChanged: refreshData)
-                .tabItem {
-                    Image(systemName: location.locationType.type.icon)
-                    Text("Residential Metrics")
-                }
+        Group {
+            switch location.locationType.type {
+            case .office:
+                OfficeMetricsView(location: location, onDataChanged: refreshData)
+                    .tabItem {
+                        Image(systemName: location.locationType.type.icon)
+                        Text("Office Metrics")
+                    }
+            case .hospital:
+                HospitalMetricsView(location: location, onDataChanged: refreshData)
+                    .tabItem {
+                        Image(systemName: location.locationType.type.icon)
+                        Text("Hospital Metrics")
+                    }
+            case .school:
+                SchoolMetricsView(location: location, onDataChanged: refreshData)
+                    .tabItem {
+                        Image(systemName: location.locationType.type.icon)
+                        Text("School Metrics")
+                    }
+            case .residential:
+                ResidentialMetricsView(location: location, onDataChanged: refreshData)
+                    .tabItem {
+                        Image(systemName: location.locationType.type.icon)
+                        Text("Residential Metrics")
+                    }
+            }
         }
     }
     
@@ -107,23 +109,26 @@ struct LocationEvaluationView: View {
     }
 }
 
-#Preview {
-    let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
-    
-    let locationType = LocationType(type: .office)
-    let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
-    
-    // Set up the location outside the ViewBuilder
-    let generalMetrics = GeneralMetrics()
-    let financials = Financials()
-    let scorecard = Scorecard()
-    
-    location.generalMetrics = generalMetrics
-    location.financials = financials
-    location.scorecard = scorecard
-    
-    // Insert into context outside the ViewBuilder
-    context.insert(location)
-    
-    return LocationEvaluationView(location: location)
+struct LocationEvaluationView_Previews: PreviewProvider {
+    static var previews: some View {
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
+        
+        let locationType = LocationType(type: .office)
+        let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
+        
+        // Set up the location
+        let generalMetrics = GeneralMetrics()
+        let financials = Financials()
+        let scorecard = Scorecard()
+        
+        location.generalMetrics = generalMetrics
+        location.financials = financials
+        location.scorecard = scorecard
+        
+        // Insert into context
+        context.insert(location)
+        
+        return LocationEvaluationView(location: location)
+            .environmentObject(SharedModelContext.shared)
+    }
 }

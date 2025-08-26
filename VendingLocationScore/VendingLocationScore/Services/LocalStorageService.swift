@@ -1,7 +1,7 @@
 import Foundation
 
 // MARK: - Local Storage Service (User-only, locations now use SwiftData)
-class LocalStorageService: ObservableObject, @preconcurrency StorageService {
+class LocalStorageService: ObservableObject, StorageService {
     static let shared = LocalStorageService()
     
     @Published var error: String?

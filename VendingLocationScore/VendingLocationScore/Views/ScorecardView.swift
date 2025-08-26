@@ -53,7 +53,7 @@ struct ScorecardView: View {
                 HStack {
                     Text("Net Monthly:")
                     Spacer()
-                    Text(location.financials?.netProfit ?? 0, format: .currency(code: ""))
+                    Text(location.financials?.netMonthly ?? 0, format: .currency(code: ""))
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -62,7 +62,7 @@ struct ScorecardView: View {
                 HStack {
                     Text("Financial Score:")
                     Spacer()
-                    Text("\(Int((location.financials?.profitMarginPercentage ?? 0) / 20))/5")
+                    Text("\(Int((location.financials?.perVendMarginPct ?? 0) * 20))/5")
                         .fontWeight(.semibold)
                         .foregroundColor(.blue)
                 }
@@ -245,20 +245,22 @@ struct ScoreRowView: View {
     }
 }
 
-#Preview {
-            let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
-    
-    let locationType = LocationType(type: .office)
-    let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
-    
-    // Set up the location outside the ViewBuilder
-    location.generalMetrics = GeneralMetrics()
-    location.financials = Financials()
-    location.scorecard = Scorecard()
-    
-    // Insert into context outside the ViewBuilder
-    context.insert(location)
-    
-    return ScorecardView(location: location)
-        .modelContainer(context.container)
+struct ScorecardView_Previews: PreviewProvider {
+    static var previews: some View {
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
+        
+        let locationType = LocationType(type: .office)
+        let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
+        
+        // Set up the location outside the ViewBuilder
+        location.generalMetrics = GeneralMetrics()
+        location.financials = Financials()
+        location.scorecard = Scorecard()
+        
+        // Insert into context outside the ViewBuilder
+        context.insert(location)
+        
+        return ScorecardView(location: location)
+            .environmentObject(SharedModelContext.shared)
+    }
 }

@@ -12,152 +12,284 @@ struct FinancialsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Revenue Projection Section
+                // Traffic & Conversion Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Revenue Projection")
+                    Text("Traffic & Conversion")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    HStack {
-                        Text("$")
-                            .foregroundColor(.secondary)
-                        TextField("0.00", value: revenueBinding, format: .number)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    if let notes = localFinancials?.revenueNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color.green.opacity(0.1))
-                .cornerRadius(12)
-                
-                // Cost Projection Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Cost Projection")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    HStack {
-                        Text("$")
-                            .foregroundColor(.secondary)
-                        TextField("0.00", value: costBinding, format: .number)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    if let notes = localFinancials?.costNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color.red.opacity(0.1))
-                .cornerRadius(12)
-                
-                // Profit Margin Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Profit Margin")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    HStack {
-                        TextField("0.00", value: profitMarginBinding, format: .number)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Text("%")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let notes = localFinancials?.profitNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Daily Foot Traffic:")
+                            Spacer()
+                            Text("\(location.generalMetrics?.footTrafficDaily ?? 0)")
+                                .foregroundColor(.secondary)
+                                .font(.system(.body, design: .monospaced))
+                        }
+                        
+                        HStack {
+                            Text("Capture Rate:")
+                            Spacer()
+                            TextField("0.05", value: capturePctBinding, format: .percent)
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                        }
+                        
+                        if let notes = localFinancials?.capturePctNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding()
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(12)
                 
-                // Payback Period Section
+                // Transaction Metrics Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Payback Period")
+                    Text("Transaction Metrics")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    HStack {
-                        TextField("0", value: paybackBinding, format: .number)
-                            .keyboardType(.numberPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Text("months")
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Days per Month:")
+                            Spacer()
+                            TextField("30", value: daysBinding, format: .number)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                        }
+                        
+                        HStack {
+                            Text("Avg Ticket:")
+                            Spacer()
+                            Text("$")
+                                .foregroundColor(.secondary)
+                            TextField("2.50", value: avgTicketBinding, format: .currency(code: "USD"))
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                        }
+                        
+                        if let notes = localFinancials?.avgTicketNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
+                }
+                .padding()
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(12)
+                
+                // Cost Metrics Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Cost Metrics")
+                        .font(.headline)
+                        .foregroundColor(.primary)
                     
-                    if let notes = localFinancials?.paybackNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("COGS per Vend:")
+                            Spacer()
+                            Text("$")
+                                .foregroundColor(.secondary)
+                            TextField("0.75", value: cogsBinding, format: .currency(code: "USD"))
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                        }
+                        
+                        HStack {
+                            Text("Variable Costs per Vend:")
+                            Spacer()
+                            Text("$")
+                                .foregroundColor(.secondary)
+                            TextField("0.25", value: variableCostsBinding, format: .currency(code: "USD"))
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                        }
+                        
+                        if let notes = localFinancials?.cogsNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        if let notes = localFinancials?.variableCostsNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color.red.opacity(0.1))
+                .cornerRadius(12)
+                
+                // Route Metrics Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Route Metrics")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Route Visit Cost:")
+                            Spacer()
+                            Text("$")
+                                .foregroundColor(.secondary)
+                            TextField("50.00", value: routeVisitCostBinding, format: .currency(code: "USD"))
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                        }
+                        
+                        HStack {
+                            Text("Visits per Month:")
+                            Spacer()
+                            TextField("4", value: routeVisitsBinding, format: .number)
+                                .keyboardType(.numberPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                        }
+                        
+                        if let notes = localFinancials?.routeVisitCostNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding()
                 .background(Color.orange.opacity(0.1))
                 .cornerRadius(12)
                 
-                // ROI Section
+                // Financial Terms Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("ROI Percentage")
+                    Text("Financial Terms")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    HStack {
-                        TextField("0.00", value: roiBinding, format: .number)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        Text("%")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    if let notes = localFinancials?.roiNotes, !notes.isEmpty {
-                        Text(notes)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Host Commission:")
+                            Spacer()
+                            TextField("0.15", value: commissionPctBinding, format: .percent)
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                        }
+                        
+                        HStack {
+                            Text("CAPEX (Equipment):")
+                            Spacer()
+                            Text("$")
+                                .foregroundColor(.secondary)
+                            TextField("0.00", value: capexBinding, format: .currency(code: "USD"))
+                                .keyboardType(.decimalPad)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                        }
+                        
+                        if let notes = localFinancials?.commissionPctNotes, !notes.isEmpty {
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding()
                 .background(Color.purple.opacity(0.1))
                 .cornerRadius(12)
                 
-                // Summary Section
+                // Calculated Results Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Financial Summary")
+                    Text("Calculated Results")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
                     VStack(spacing: 8) {
                         HStack {
-                            Text("Net Profit:")
+                            Text("Expected Transactions/Day:")
                             Spacer()
-                            Text(formatCurrency(localFinancials?.netProfit ?? 0))
-                                .foregroundColor(netProfitColor)
+                            Text("\(String(format: "%.1f", calculatedTxDay))")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.secondary)
                         }
                         
                         HStack {
-                            Text("Profit Margin:")
+                            Text("Gross Revenue/Month:")
                             Spacer()
-                            Text("\(String(format: "%.1f", localFinancials?.profitMarginPercentage ?? 0))%")
-                                .foregroundColor(.primary)
+                            Text(formatCurrency(calculatedGrossMonthly))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.green)
                         }
                         
                         HStack {
-                            Text("ROI:")
+                            Text("Product Costs/Month:")
                             Spacer()
-                            Text("\(String(format: "%.1f", localFinancials?.roiPercentage ?? 0))%")
-                                .foregroundColor(.primary)
+                            Text(formatCurrency(calculatedProductCostsMonthly))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.red)
+                        }
+                        
+                        HStack {
+                            Text("Route Costs/Month:")
+                            Spacer()
+                            Text(formatCurrency(calculatedRouteCostsMonthly))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.orange)
+                        }
+                        
+                        HStack {
+                            Text("Commission/Month:")
+                            Spacer()
+                            Text(formatCurrency(calculatedCommissionMonthly))
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.purple)
+                        }
+                        
+                        Divider()
+                        
+                        HStack {
+                            Text("Net Profit/Month:")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text(formatCurrency(calculatedNetMonthly))
+                                .font(.system(.body, design: .monospaced))
+                                .fontWeight(.semibold)
+                                .foregroundColor(calculatedNetMonthly >= 0 ? .green : .red)
+                        }
+                        
+                        HStack {
+                            Text("Per-Vend Margin:")
+                            Spacer()
+                            Text("\(String(format: "%.1f", calculatedPerVendMarginPct * 100))%")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(calculatedPerVendMarginPct >= 0 ? .green : .red)
+                        }
+                        
+                        HStack {
+                            Text("Break-even Tx/Day:")
+                            Spacer()
+                            Text("\(String(format: "%.1f", calculatedBreakevenTxDay))")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        if calculatedCapex > 0 {
+                            HStack {
+                                Text("Payback Period:")
+                                Spacer()
+                                Text("\(String(format: "%.1f", calculatedPaybackMonths)) months")
+                                    .font(.system(.body, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                     .padding()
@@ -183,59 +315,171 @@ struct FinancialsView: View {
     
     // MARK: - Computed Bindings
     
-    private var revenueBinding: Binding<Double> {
+    private var capturePctBinding: Binding<Double> {
         Binding(
-            get: { localFinancials?.revenueProjection ?? 0.0 },
+            get: { localFinancials?.capturePct ?? 0.05 },
             set: { newValue in
                 ensureFinancialsExist()
-                localFinancials?.revenueProjection = newValue
+                localFinancials?.updateCapturePct(newValue, notes: localFinancials?.capturePctNotes ?? "")
                 updateFinancials()
             }
         )
     }
     
-    private var costBinding: Binding<Double> {
+    private var daysBinding: Binding<Int> {
         Binding(
-            get: { localFinancials?.costProjection ?? 0.0 },
+            get: { localFinancials?.days ?? 30 },
             set: { newValue in
                 ensureFinancialsExist()
-                localFinancials?.costProjection = newValue
+                localFinancials?.updateDays(newValue, notes: localFinancials?.daysNotes ?? "")
                 updateFinancials()
             }
         )
     }
     
-    private var profitMarginBinding: Binding<Double> {
+    private var avgTicketBinding: Binding<Double> {
         Binding(
-            get: { localFinancials?.profitMargin ?? 0.0 },
+            get: { localFinancials?.avgTicket ?? 2.50 },
             set: { newValue in
                 ensureFinancialsExist()
-                localFinancials?.profitMargin = newValue
+                localFinancials?.updateAvgTicket(newValue, notes: localFinancials?.avgTicketNotes ?? "")
                 updateFinancials()
             }
         )
     }
     
-    private var paybackBinding: Binding<Int> {
+    private var cogsBinding: Binding<Double> {
         Binding(
-            get: { localFinancials?.paybackPeriod ?? 0 },
+            get: { localFinancials?.cogs ?? 0.75 },
             set: { newValue in
                 ensureFinancialsExist()
-                localFinancials?.paybackPeriod = newValue
+                localFinancials?.updateCogs(newValue, notes: localFinancials?.cogsNotes ?? "")
                 updateFinancials()
             }
         )
     }
     
-    private var roiBinding: Binding<Double> {
+    private var variableCostsBinding: Binding<Double> {
         Binding(
-            get: { localFinancials?.roiPercentage ?? 0.0 },
+            get: { localFinancials?.variableCosts ?? 0.25 },
             set: { newValue in
                 ensureFinancialsExist()
-                localFinancials?.roiPercentage = newValue
+                localFinancials?.updateVariableCosts(newValue, notes: localFinancials?.variableCostsNotes ?? "")
                 updateFinancials()
             }
         )
+    }
+    
+    private var routeVisitCostBinding: Binding<Double> {
+        Binding(
+            get: { localFinancials?.routeVisitCost ?? 50.0 },
+            set: { newValue in
+                ensureFinancialsExist()
+                localFinancials?.updateRouteVisitCost(newValue, notes: localFinancials?.routeVisitCostNotes ?? "")
+                updateFinancials()
+            }
+        )
+    }
+    
+    private var routeVisitsBinding: Binding<Int> {
+        Binding(
+            get: { localFinancials?.routeVisits ?? 4 },
+            set: { newValue in
+                ensureFinancialsExist()
+                localFinancials?.updateRouteVisits(newValue, notes: localFinancials?.routeVisitsNotes ?? "")
+                updateFinancials()
+            }
+        )
+    }
+    
+    private var commissionPctBinding: Binding<Double> {
+        Binding(
+            get: { localFinancials?.commissionPct ?? 0.15 },
+            set: { newValue in
+                ensureFinancialsExist()
+                localFinancials?.updateCommissionPct(newValue, notes: localFinancials?.commissionPctNotes ?? "")
+                updateFinancials()
+            }
+        )
+    }
+    
+    private var capexBinding: Binding<Double> {
+        Binding(
+            get: { localFinancials?.capex ?? 0.0 },
+            set: { newValue in
+                ensureFinancialsExist()
+                localFinancials?.updateCapex(newValue, notes: localFinancials?.capexNotes ?? "")
+                updateFinancials()
+            }
+        )
+    }
+    
+    // MARK: - Calculated Values
+    
+    private var calculatedTxDay: Double {
+        let footTraffic = Double(location.generalMetrics?.footTrafficDaily ?? 0)
+        let capturePct = localFinancials?.capturePct ?? 0.05
+        return footTraffic * capturePct
+    }
+    
+    private var calculatedGrossMonthly: Double {
+        let avgTicket = localFinancials?.avgTicket ?? 2.50
+        let days = Double(localFinancials?.days ?? 30)
+        return avgTicket * calculatedTxDay * days
+    }
+    
+    private var calculatedProductCostsMonthly: Double {
+        let cogs = localFinancials?.cogs ?? 0.75
+        let variableCosts = localFinancials?.variableCosts ?? 0.25
+        let days = Double(localFinancials?.days ?? 30)
+        return (cogs + variableCosts) * calculatedTxDay * days
+    }
+    
+    private var calculatedRouteCostsMonthly: Double {
+        let routeVisitCost = localFinancials?.routeVisitCost ?? 50.0
+        let routeVisits = Double(localFinancials?.routeVisits ?? 4)
+        return routeVisitCost * routeVisits
+    }
+    
+    private var calculatedCommissionMonthly: Double {
+        let commissionPct = localFinancials?.commissionPct ?? 0.15
+        return commissionPct * calculatedGrossMonthly
+    }
+    
+    private var calculatedNetMonthly: Double {
+        return calculatedGrossMonthly - calculatedProductCostsMonthly - calculatedRouteCostsMonthly - calculatedCommissionMonthly
+    }
+    
+    private var calculatedPerVendMarginPct: Double {
+        let avgTicket = localFinancials?.avgTicket ?? 2.50
+        let commissionPct = localFinancials?.commissionPct ?? 0.15
+        let cogs = localFinancials?.cogs ?? 0.75
+        let variableCosts = localFinancials?.variableCosts ?? 0.25
+        
+        guard avgTicket > 0 else { return 0.0 }
+        return (avgTicket * (1 - commissionPct) - (cogs + variableCosts)) / avgTicket
+    }
+    
+    private var calculatedBreakevenTxDay: Double {
+        let days = Double(localFinancials?.days ?? 30)
+        let avgTicket = localFinancials?.avgTicket ?? 2.50
+        let commissionPct = localFinancials?.commissionPct ?? 0.15
+        let cogs = localFinancials?.cogs ?? 0.75
+        let variableCosts = localFinancials?.variableCosts ?? 0.25
+        
+        let denominator = days * (avgTicket * (1 - commissionPct) - (cogs + variableCosts))
+        guard denominator > 0 else { return 0.0 }
+        return calculatedRouteCostsMonthly / denominator
+    }
+    
+    private var calculatedPaybackMonths: Double {
+        let capex = localFinancials?.capex ?? 0.0
+        let net = max(calculatedNetMonthly, 0.01) // Prevent division by zero
+        return capex / net
+    }
+    
+    private var calculatedCapex: Double {
+        return localFinancials?.capex ?? 0.0
     }
     
     // MARK: - Helper Methods
@@ -283,24 +527,25 @@ struct FinancialsView: View {
     private func formatCurrency(_ value: Double) -> String {
         return value.formatted(.currency(code: "USD"))
     }
-    
-    private var netProfitColor: Color {
-        return localFinancials?.netProfit ?? 0 >= 0 ? .green : .red
-    }
 }
 
 struct FinancialsView_Previews: PreviewProvider {
     static var previews: some View {
-        let _ = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
         
         let locationType = LocationType(type: .office)
         let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
         
+        let generalMetrics = GeneralMetrics(footTrafficDaily: 200)
+        location.generalMetrics = generalMetrics
+        
         let financials = Financials()
-        financials.revenueProjection = 5000.0
-        financials.costProjection = 3000.0
         location.financials = financials
         
+        // Insert into context
+        context.insert(location)
+        
         return FinancialsView(location: location, onDataChanged: {})
+            .environmentObject(SharedModelContext.shared)
     }
 }

@@ -138,24 +138,27 @@ final class OfficeMetrics: TypeSpecificMetrics, Codable {
     // MARK: - Update Methods
     
     func updateMetric(metricType: OfficeMetricType, rating: Int, notes: String) {
+        // Validate rating is within 0-5 range
+        let validatedRating = max(0, min(5, rating))
+        
         switch metricType {
         case .commonAreas:
-            commonAreasRating = rating
+            commonAreasRating = validatedRating
             commonAreasNotes = notes
         case .hoursAccess:
-            hoursAccessRating = rating
+            hoursAccessRating = validatedRating
             hoursAccessNotes = notes
         case .tenantAmenities:
-            tenantAmenitiesRating = rating
+            tenantAmenitiesRating = validatedRating
             tenantAmenitiesNotes = notes
         case .proximityHubTransit:
-            proximityHubTransitRating = rating
+            proximityHubTransitRating = validatedRating
             proximityHubTransitNotes = notes
         case .brandingRestrictions:
-            brandingRestrictionsRating = rating
+            brandingRestrictionsRating = validatedRating
             brandingRestrictionsNotes = notes
         case .layoutType:
-            layoutTypeRating = rating
+            layoutTypeRating = validatedRating
             layoutTypeNotes = notes
         }
     }

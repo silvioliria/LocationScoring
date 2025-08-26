@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     @StateObject private var authService: AuthenticationService
+    @StateObject private var sharedContext = SharedModelContext.shared
     
     init() {
         self._authService = StateObject(wrappedValue: AuthenticationService())
@@ -18,9 +20,6 @@ struct ContentView: View {
         .onAppear {
             authService.checkAuthenticationState()
         }
+        .environmentObject(sharedContext)
     }
-}
-
-#Preview {
-    ContentView()
 }

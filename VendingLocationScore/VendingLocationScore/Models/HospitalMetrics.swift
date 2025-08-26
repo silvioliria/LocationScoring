@@ -138,24 +138,27 @@ final class HospitalMetrics: TypeSpecificMetrics, Codable {
     // MARK: - Update Methods
     
     func updateMetric(metricType: HospitalMetricType, rating: Int, notes: String) {
+        // Validate rating is within 0-5 range
+        let validatedRating = max(0, min(5, rating))
+        
         switch metricType {
         case .patientVolume:
-            patientVolumeRating = rating
+            patientVolumeRating = validatedRating
             patientVolumeNotes = notes
         case .staffSize:
-            staffSizeRating = rating
+            staffSizeRating = validatedRating
             staffSizeNotes = notes
         case .visitorTraffic:
-            visitorTrafficRating = rating
+            visitorTrafficRating = validatedRating
             visitorTrafficNotes = notes
         case .foodService:
-            foodServiceRating = rating
+            foodServiceRating = validatedRating
             foodServiceNotes = notes
         case .vendingRestrictions:
-            vendingRestrictionsRating = rating
+            vendingRestrictionsRating = validatedRating
             vendingRestrictionsNotes = notes
         case .hoursOfOperation:
-            hoursOfOperationRating = rating
+            hoursOfOperationRating = validatedRating
             hoursOfOperationNotes = notes
         }
     }

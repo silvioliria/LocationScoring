@@ -150,27 +150,30 @@ final class ResidentialMetrics: TypeSpecificMetrics, Codable {
     // MARK: - Update Methods
     
     func updateMetric(metricType: ResidentialMetricType, rating: Int, notes: String) {
+        // Validate rating is within 0-5 range
+        let validatedRating = max(0, min(5, rating))
+        
         switch metricType {
         case .unitCount:
-            unitCountRating = rating
+            unitCountRating = validatedRating
             unitCountNotes = notes
         case .occupancyRate:
-            occupancyRateRating = rating
+            occupancyRateRating = validatedRating
             occupancyRateNotes = notes
         case .demographics:
-            demographicRating = rating
+            demographicRating = validatedRating
             demographicNotes = notes
         case .foodService:
-            foodServiceRating = rating
+            foodServiceRating = validatedRating
             foodServiceNotes = notes
         case .vendingRestrictions:
-            vendingRestrictionsRating = rating
+            vendingRestrictionsRating = validatedRating
             vendingRestrictionsNotes = notes
         case .hoursOfOperation:
-            hoursOfOperationRating = rating
+            hoursOfOperationRating = validatedRating
             hoursOfOperationNotes = notes
         case .buildingLayout:
-            buildingLayoutRating = rating
+            buildingLayoutRating = validatedRating
             buildingLayoutNotes = notes
         }
     }

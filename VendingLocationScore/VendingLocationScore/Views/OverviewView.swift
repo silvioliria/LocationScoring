@@ -85,7 +85,7 @@ struct OverviewView: View {
                         Text("Net Monthly")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text(location.financials?.netProfit ?? 0, format: .currency(code: ""))
+                        Text(location.financials?.netMonthly ?? 0, format: .currency(code: ""))
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
@@ -96,7 +96,7 @@ struct OverviewView: View {
                             Text("Gross")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(financials.revenueProjection, format: .currency(code: ""))
+                            Text(financials.grossMonthly, format: .currency(code: ""))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -171,7 +171,7 @@ struct OverviewView: View {
     }
     
     private var netMonthlyColor: Color {
-        let netMonthly = location.financials?.netProfit ?? 0
+        let netMonthly = location.financials?.netMonthly ?? 0
         return netMonthly >= 0 ? .green : .red
     }
     
@@ -260,28 +260,20 @@ struct OverviewView: View {
 
 struct OverviewView_Previews: PreviewProvider {
     static var previews: some View {
-        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self).mainContext
+        let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
         
         let locationType = LocationType(type: .office)
         let location = Location(name: "Sample Office", address: "123 Main St", comment: "Test location", locationType: locationType)
         
         // Set up the location
-        let generalMetrics = GeneralMetrics()
-        generalMetrics.footTrafficDaily = 750
-        location.generalMetrics = generalMetrics
-        
-        let financials = Financials()
-        financials.revenueProjection = 2000.0
-        financials.costProjection = 500.0
-        location.financials = financials
-        
-        let scorecard = Scorecard()
-        location.scorecard = scorecard
+        location.generalMetrics = GeneralMetrics()
+        location.financials = Financials()
+        location.scorecard = Scorecard()
         
         // Insert into context
         context.insert(location)
         
         return OverviewView(location: location)
-            .modelContainer(context.container)
+            .environmentObject(SharedModelContext.shared)
     }
 }

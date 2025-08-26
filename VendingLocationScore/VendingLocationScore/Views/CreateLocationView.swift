@@ -3,10 +3,18 @@ import SwiftData
 
 struct CreateLocationView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var context
-    @State private var dataService = DataManagementServiceFactory.createDataManagementService()
     
     let onLocationCreated: (Location) -> Void
+    let modelContext: ModelContext
+    
+    // Use computed property to get a fresh data service instance with current context
+    private var dataService: any DataManagementService {
+        let service = DataManagementServiceFactory.createDataManagementService()
+        if let localDataService = service as? LocalDataService {
+            localDataService.setContext(modelContext)
+        }
+        return service
+    }
     
     // Step management
     @State private var currentStep = 0
@@ -28,8 +36,9 @@ struct CreateLocationView: View {
     
     private let totalSteps = 4
     
-    init(onLocationCreated: @escaping (Location) -> Void) {
+    init(onLocationCreated: @escaping (Location) -> Void, modelContext: ModelContext) {
         self.onLocationCreated = onLocationCreated
+        self.modelContext = modelContext
     }
     
     var body: some View {
@@ -64,10 +73,7 @@ struct CreateLocationView: View {
                 }
             }
             .onAppear {
-                // Set the context in the data service
-                if let localDataService = dataService as? LocalDataService {
-                    localDataService.setContext(context)
-                }
+                // Context is now set in the computed property
             }
         }
     }
@@ -515,6 +521,8 @@ struct CreateLocationView: View {
         
         do {
             print("🔍 Creating location with name: '\(name)', address: '\(address)', type: \(selectedLocationType)")
+            print("🔍 ModelContext: \(modelContext)")
+            print("🔍 DataService type: \(type(of: dataService))")
             
             // Validate required fields
             guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -523,33 +531,16 @@ struct CreateLocationView: View {
             }
             
             // Use the new LocationManager to create the location
-            let location = LocationManager.shared.createLocationWithQuickSetup(
-                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                address: address.trimmingCharacters(in: .whitespacesAndNewlines),
-                type: selectedLocationType,
-                comment: comment.trimmingCharacters(in: .whitespacesAndNewlines),
-                quickSetupData: moduleQuickData
+            let savedLocation = try await dataService.createLocation(
+                name: name,
+                address: address,
+                comment: comment.isEmpty ? nil : comment,
+                locationType: selectedLocationType
             )
-            
-            print("🔍 Location created: \(location.name) (\(location.id))")
-            print("🔍 Location type: \(location.locationType.type)")
-            print("🔍 Has generalMetrics: \(location.generalMetrics != nil)")
-            print("🔍 Has financials: \(location.financials != nil)")
-            print("🔍 Has scorecard: \(location.scorecard != nil)")
-            
-            // Validate the created location
-            guard location.generalMetrics != nil,
-                  location.financials != nil,
-                  location.scorecard != nil else {
-                throw NSError(domain: "CreationError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to initialize location components"])
-            }
-            
-            print("🔍 Saving location using data service...")
-            try await dataService.createLocation(location)
             print("🔍 Location saved successfully!")
             
             // Call the callback to notify parent view
-            onLocationCreated(location)
+            onLocationCreated(savedLocation)
             
             // Return to the previous view
             dismiss()
@@ -677,5 +668,10 @@ struct QuickSetupField: View {
 }
 
 #Preview {
-    CreateLocationView { _ in }
+    let context = try! ModelContainer(for: Location.self, LocationType.self, OfficeMetrics.self, GeneralMetrics.self, Financials.self, Scorecard.self, User.self, MetricDefinition.self, MetricInstance.self, LocationMetrics.self).mainContext
+    
+    CreateLocationView(
+        onLocationCreated: { _ in },
+        modelContext: context
+    )
 }
