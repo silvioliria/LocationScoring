@@ -57,8 +57,8 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
         hasMoreItems = true
         errorMessage = nil
         
-        // Don't clear items immediately to maintain visual continuity
-        // Items will be replaced when new data arrives
+        // Clear items to ensure fresh data from database
+        items = []
         
         print("🔄 About to call loadNextPage()")
         await loadNextPage()
@@ -116,18 +116,7 @@ final class LazyLoadingService<T: PersistentModel, R: RepositoryProtocol>: Obser
         }
     }
     
-    /// Immediately adds a new item to the list for instant visual feedback
-    /// This provides immediate UI updates without database operations
-    /// - Parameter newItem: The new item to add
-    func addItem(_ newItem: T) {
-        print("🔄 LazyLoadingService.addItem() called for: \(newItem)")
-        
-        // Simply add the new item to the beginning of the list
-        // This provides instant visual feedback
-        items.insert(newItem, at: 0)
-        
-        print("🔄 Item added, new count: \(items.count)")
-    }
+
     
     /// Filters the data using a predicate and resets pagination
     /// - Parameter predicate: The predicate to filter by
